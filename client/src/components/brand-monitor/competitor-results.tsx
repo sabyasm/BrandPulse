@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Crown, TrendingUp, Eye } from "lucide-react";
+import { Crown, TrendingUp, Eye, Plus, Minus } from "lucide-react";
 import type { BrandAnalysis } from "@shared/schema";
 
 interface CompetitorResultsProps {
@@ -14,6 +14,10 @@ export default function CompetitorResults({ analysis }: CompetitorResultsProps) 
   if (!results?.competitorResults) return null;
 
   const { competitorResults } = results;
+  
+  // Check if we have Gemini-processed results
+  const hasProcessedResults = (results as any)?.processedResults;
+  const processedResults = hasProcessedResults ? (results as any).processedResults : null;
 
   // Aggregate brand mentions across all prompts and providers
   const brandMentions = new Map<string, { 
@@ -72,31 +76,51 @@ export default function CompetitorResults({ analysis }: CompetitorResultsProps) 
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topBrands.slice(0, 6).map((brand, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-gray-900">{brand.name}</h4>
-                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-                    #{Math.round(brand.avgRanking)}
-                  </Badge>
+            {processedResults ? (
+              // Show Gemini-processed top brands
+              processedResults.topRecommendedBrands.slice(0, 6).map((brand: any, index: number) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">{brand.name}</h4>
+                    <div className="flex items-center space-x-2">
+                      {brand.sentiment === 'positive' ? (
+                        <Plus className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Minus className="w-4 h-4 text-orange-600" />
+                      )}
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                        {brand.score}/10
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 leading-relaxed">{brand.reasoning}</p>
                 </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Mentions:</span>
-                    <span className="font-medium">{brand.count}</span>
+              ))
+            ) : (
+              // Fallback to old extraction method
+              topBrands.slice(0, 6).map((brand, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-900">{brand.name}</h4>
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                      #{Math.round(brand.avgRanking)}
+                    </Badge>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Providers:</span>
-                    <span className="font-medium">{brand.providers.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Avg Ranking:</span>
-                    <span className="font-medium">#{Math.round(brand.avgRanking)}</span>
+                  
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Mentions:</span>
+                      <span className="font-medium">{brand.count}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Providers:</span>
+                      <span className="font-medium">{brand.providers.length}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -109,49 +133,101 @@ export default function CompetitorResults({ analysis }: CompetitorResultsProps) 
         </TabsList>
 
         <TabsContent value="by-prompt" className="space-y-6 mt-6">
-          {analysis.selectedPrompts.map((prompt, promptIndex) => {
-            const promptResults = competitorResults.filter(r => r.prompt === prompt);
-            
-            return (
+          {processedResults ? (
+            // Show Gemini-processed results by prompt
+            processedResults.resultsByPrompt.map((promptData: any, promptIndex: number) => (
               <Card key={promptIndex}>
                 <CardContent className="p-6">
-                  <h4 className="font-medium text-gray-900 mb-4">"{prompt}"</h4>
+                  <h4 className="font-medium text-gray-900 mb-4">"{promptData.prompt}"</h4>
                   
                   <div className="space-y-4">
-                    {promptResults.map((result, resultIndex) => (
-                      <div key={resultIndex} className="border border-gray-200 rounded-lg p-4">
+                    {promptData.providers.map((provider: any, providerIndex: number) => (
+                      <div key={providerIndex} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
                           <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                            {result.provider}
+                            {provider.provider}
                           </Badge>
-                          <span className="text-sm text-gray-500">
-                            {result.recommendedBrands.length} recommendations
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            {provider.sentiment === 'positive' ? (
+                              <Plus className="w-4 h-4 text-green-600" />
+                            ) : (
+                              <Minus className="w-4 h-4 text-orange-600" />
+                            )}
+                            <span className="text-sm text-gray-500">Recommended</span>
+                          </div>
                         </div>
                         
-                        {result.recommendedBrands.length > 0 ? (
-                          <div className="space-y-2">
-                            {result.recommendedBrands.map((brand, brandIndex) => (
-                              <div key={brandIndex} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                <div className="flex items-center space-x-2">
-                                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-                                    #{brand.ranking}
+                        <div className="space-y-2">
+                          <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <span className="font-medium text-gray-900">{provider.recommendedBrand}</span>
+                                {provider.sentiment === 'positive' ? (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                    Positive
                                   </Badge>
-                                  <span className="font-medium text-gray-900">{brand.name}</span>
-                                </div>
+                                ) : (
+                                  <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                                    Caution
+                                  </Badge>
+                                )}
                               </div>
-                            ))}
+                              <p className="text-sm text-gray-600">{provider.reasoning}</p>
+                            </div>
                           </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">No specific brand recommendations found</p>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
+            ))
+          ) : (
+            // Fallback to old method
+            analysis.selectedPrompts.map((prompt, promptIndex) => {
+              const promptResults = competitorResults.filter(r => r.prompt === prompt);
+              
+              return (
+                <Card key={promptIndex}>
+                  <CardContent className="p-6">
+                    <h4 className="font-medium text-gray-900 mb-4">"{prompt}"</h4>
+                    
+                    <div className="space-y-4">
+                      {promptResults.map((result, resultIndex) => (
+                        <div key={resultIndex} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                              {result.provider}
+                            </Badge>
+                            <span className="text-sm text-gray-500">
+                              {result.recommendedBrands.length} recommendations
+                            </span>
+                          </div>
+                          
+                          {result.recommendedBrands.length > 0 ? (
+                            <div className="space-y-2">
+                              {result.recommendedBrands.map((brand, brandIndex) => (
+                                <div key={brandIndex} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                  <div className="flex items-center space-x-2">
+                                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                                      #{brand.ranking}
+                                    </Badge>
+                                    <span className="font-medium text-gray-900">{brand.name}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">No specific brand recommendations found</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </TabsContent>
 
         <TabsContent value="by-provider" className="space-y-6 mt-6">

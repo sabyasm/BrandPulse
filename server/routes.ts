@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCompanySchema, insertBrandAnalysisSchema } from "@shared/schema";
 import { z } from "zod";
+import { processCompetitorResults } from "./gemini";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -513,38 +514,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Aggregate results
-      const brandMentions = new Map<string, { count: number; avgRanking: number; providers: string[] }>();
+      // Process results with Gemini for clean brand extraction and formatting
+      console.log(`Processing results with Gemini for clean brand extraction...`);
       
-      competitorResults.forEach(result => {
-        result.recommendedBrands.forEach(brand => {
-          const existing = brandMentions.get(brand.name.toLowerCase()) || {
-            count: 0,
-            avgRanking: 0,
-            providers: []
-          };
-          
-          existing.count++;
-          existing.avgRanking = ((existing.avgRanking * (existing.count - 1)) + brand.ranking) / existing.count;
-          if (!existing.providers.includes(result.provider)) {
-            existing.providers.push(result.provider);
-          }
-          
-          brandMentions.set(brand.name.toLowerCase(), existing);
-        });
-      });
+      try {
+        const processedResults = await processCompetitorResults(
+          competitorResults.map(result => ({
+            prompt: result.prompt,
+            provider: result.provider,
+            response: result.response
+          }))
+        );
 
-      // Complete analysis
-      await storage.updateBrandAnalysis(analysisId, {
-        status: "completed",
-        progress: 100,
-        results: {
-          providerResponses: [],
-          competitors: [],
-          insights: [],
-          competitorResults,
-        },
-      });
+        console.log(`Gemini processing completed. Found ${processedResults.topRecommendedBrands.length} top brands`);
+
+        // Update the competitor results with processed data
+        const enhancedCompetitorResults = competitorResults.map(result => ({
+          ...result,
+          processedBrands: processedResults.resultsByPrompt
+            .find(p => p.prompt === result.prompt)
+            ?.providers.filter(prov => prov.provider === result.provider) || []
+        }));
+
+        // Complete analysis with processed results
+        await storage.updateBrandAnalysis(analysisId, {
+          status: "completed",
+          progress: 100,
+          results: {
+            providerResponses: [],
+            competitors: processedResults.topRecommendedBrands.map(brand => ({
+              name: brand.name,
+              mentions: brand.score,
+              totalPrompts: selectedPrompts.length,
+              averagePosition: brand.score / 2, // Convert score to position estimate
+            })),
+            insights: [
+              {
+                type: "opportunity" as const,
+                title: "Top Recommended Brands",
+                description: `Analysis shows ${processedResults.topRecommendedBrands[0]?.name || 'leading brands'} as the most frequently recommended across AI models.`,
+              },
+              {
+                type: "gap" as const,
+                title: "Provider Consistency",
+                description: `Different AI models show varying preferences - consider this when targeting different AI-assisted decision makers.`,
+              },
+            ],
+            competitorResults: enhancedCompetitorResults,
+          },
+        });
+      } catch (geminiError) {
+        console.error('Gemini processing failed, using basic results:', geminiError);
+        
+        // Fallback to basic processing if Gemini fails
+        await storage.updateBrandAnalysis(analysisId, {
+          status: "completed",
+          progress: 100,
+          results: {
+            providerResponses: [],
+            competitors: [],
+            insights: [
+              {
+                type: "gap" as const,
+                title: "Processing Issue",
+                description: "Results processed with basic extraction. Enhanced analysis temporarily unavailable.",
+              },
+            ],
+            competitorResults,
+          },
+        });
+      }
 
     } catch (error) {
       console.error("Competitor analysis processing error:", error);
