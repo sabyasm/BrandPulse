@@ -7,10 +7,11 @@ import { z } from "zod";
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 const AVAILABLE_MODELS = [
-  { id: "openai/gpt-4", name: "OpenAI GPT-4", provider: "OpenAI" },
-  { id: "anthropic/claude-3-sonnet", name: "Claude 3 Sonnet", provider: "Anthropic" },
-  { id: "google/gemini-pro", name: "Gemini Pro", provider: "Google" },
-  { id: "perplexity/sonar-medium-online", name: "Perplexity Sonar", provider: "Perplexity" },
+  { id: "google/gemini-2.5-flash", name: "Gemini 2.5", provider: "Google" },
+  { id: "deepseek/deepseek-chat-v3-0324", name: "DeepSeek v3", provider: "DeepSeek" },
+  { id: "x-ai/grok-4", name: "Grok 4", provider: "xAI" },
+  { id: "openai/gpt-4.1", name: "OpenAI GPT4.1", provider: "OpenAI" },
+  { id: "anthropic/claude-sonnet-4", name: "Claude 4", provider: "Anthropic" },
 ];
 
 function extractCompetitorRecommendations(response: string, prompt: string) {
@@ -20,42 +21,64 @@ function extractCompetitorRecommendations(response: string, prompt: string) {
     reason: string;
   }> = [];
   
-  // Split response into sentences and look for patterns
-  const sentences = response.split(/[.!?]/);
   let currentRanking = 1;
   
-  // Look for numbered lists or ranking patterns
+  // Enhanced patterns to capture various types of brand mentions
   const rankingPatterns = [
-    /(\d+)\.\s*([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))/gi,
-    /(?:first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)[:\s]+([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))/gi,
-    /recommend[s]?\s+([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))/gi,
-    /([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))\s+(?:is|would be|stands out)/gi
+    // Numbered lists: "1. Mailchimp", "2. Constant Contact"
+    /(\d+)\.\s*\*?\*?([A-Z][a-zA-Z0-9\s&.-]{2,30}?)(?:\*\*)?[:\n]/gi,
+    // Bold formatting: "**Mailchimp**", "**ActiveCampaign**"
+    /\*\*([A-Z][a-zA-Z0-9\s&.-]{2,30}?)\*\*/gi,
+    // Ordinal patterns: "First: Mailchimp", "1st: Salesforce"
+    /(?:first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)[:\s]+([A-Z][a-zA-Z0-9\s&.-]{2,30}?)(?:[:.]|$)/gi,
+    // Recommendation patterns: "I recommend Mailchimp", "Consider ActiveCampaign"
+    /(?:recommend[s]?|consider|suggest[s]?|use|try)\s+([A-Z][a-zA-Z0-9\s&.-]{2,30})(?:\s+(?:is|for|as))/gi,
+    // Brand mentions with context: "Mailchimp is", "ActiveCampaign stands out"
+    /([A-Z][a-zA-Z0-9\s&.-]{2,30})\s+(?:is|stands out|excels|offers|provides|features)/gi,
+    // Common software patterns with brackets or colons
+    /([A-Z][a-zA-Z0-9\s&.-]{2,30}):/gi,
   ];
   
-  rankingPatterns.forEach(pattern => {
+  console.log(`Extracting recommendations from response: ${response.substring(0, 200)}...`);
+  
+  rankingPatterns.forEach((pattern, patternIndex) => {
     const matches = Array.from(response.matchAll(pattern));
+    console.log(`Pattern ${patternIndex} found ${matches.length} matches`);
+    
     for (const match of matches) {
-      const name = match[2] || match[1];
-      if (name && !recommendations.find(r => r.name.toLowerCase() === name.toLowerCase())) {
+      const name = (match[2] || match[1])?.trim();
+      if (name && name.length > 2 && name.length < 50) {
+        // Filter out common words that might be captured
+        const commonWords = ['Why', 'What', 'How', 'The', 'This', 'That', 'These', 'Those', 'Here', 'There', 'When', 'Where', 'While', 'Although', 'However', 'Therefore', 'Moreover', 'Furthermore'];
+        if (commonWords.includes(name)) continue;
+        
+        // Check if already exists
+        if (recommendations.find(r => r.name.toLowerCase() === name.toLowerCase())) continue;
+        
         // Find context/reason in surrounding text
         const matchIndex = response.indexOf(match[0]);
-        const contextStart = Math.max(0, matchIndex - 100);
-        const contextEnd = Math.min(response.length, matchIndex + 200);
-        const context = response.slice(contextStart, contextEnd);
+        const contextStart = Math.max(0, matchIndex - 150);
+        const contextEnd = Math.min(response.length, matchIndex + 300);
+        const context = response.slice(contextStart, contextEnd).trim();
         
         recommendations.push({
-          name: name.trim(),
+          name: name,
           ranking: currentRanking++,
-          reason: context.trim()
+          reason: context
         });
+        
+        console.log(`Extracted brand: ${name}`);
       }
     }
   });
   
+  console.log(`Total recommendations extracted: ${recommendations.length}`);
   return recommendations;
 }
 
 async function callOpenRouter(apiKey: string, model: string, prompt: string) {
+  console.log(`Making OpenRouter API call to model: ${model} with prompt: ${prompt.substring(0, 50)}...`);
+  
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
     headers: {
@@ -73,10 +96,13 @@ async function callOpenRouter(apiKey: string, model: string, prompt: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`OpenRouter API error: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
+    throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
+  console.log(`OpenRouter API response received from ${model}:`, data.choices?.[0]?.message?.content?.substring(0, 100) + "...");
   return data.choices[0].message.content;
 }
 
@@ -210,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const analysis = await storage.createBrandAnalysis(validatedData);
 
         // Start competitor analysis in background
-        processCompetitorAnalysis(analysis.id, apiKey, validatedData.selectedProviders as string[], validatedData.selectedPrompts as string[]);
+        processCompetitorAnalysis(analysis.id, apiKey, validatedData.selectedProviders as string[], validatedData.selectedPrompts as string[]).catch(console.error);
         
         res.json(analysis);
         return;
@@ -401,6 +427,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     selectedProviders: string[],
     selectedPrompts: string[]
   ) {
+    console.log(`=== COMPETITOR ANALYSIS STARTED ===`);
+    console.log(`Analysis ID: ${analysisId}`);
+    console.log(`Providers: ${JSON.stringify(selectedProviders)}`);
+    console.log(`Prompts: ${JSON.stringify(selectedPrompts)}`);
+    console.log(`API Key present: ${!!apiKey}`);
     try {
       await storage.updateBrandAnalysis(analysisId, {
         status: "in_progress",
@@ -427,8 +458,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         for (const prompt of selectedPrompts) {
           try {
+            console.log(`Processing prompt "${prompt}" with provider ${model.name} (${providerId})`);
             const response = await callOpenRouter(apiKey, providerId, prompt);
             const recommendations = extractCompetitorRecommendations(response, prompt);
+            
+            console.log(`Extracted ${recommendations.length} recommendations from ${model.name}`);
             
             competitorResults.push({
               prompt,
@@ -437,6 +471,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
               recommendedBrands: recommendations,
             });
 
+            completedCalls++;
+            const progress = Math.round((completedCalls / totalCalls) * 100);
+            
+            console.log(`Progress: ${progress}% (${completedCalls}/${totalCalls})`);
+            
+            await storage.updateBrandAnalysis(analysisId, {
+              progress,
+              results: {
+                providerResponses: [],
+                competitors: [],
+                insights: [],
+                competitorResults: [...competitorResults],
+              },
+            });
+          } catch (error) {
+            console.error(`Error calling ${model.name} (${providerId}):`, error);
+            // Add a placeholder result so progress continues
+            competitorResults.push({
+              prompt,
+              provider: model.name,
+              response: "Error: Failed to get response from this provider",
+              recommendedBrands: [],
+            });
+            
             completedCalls++;
             const progress = Math.round((completedCalls / totalCalls) * 100);
             
@@ -449,9 +507,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 competitorResults: [...competitorResults],
               },
             });
-          } catch (error) {
-            console.error(`Error calling ${model.name}:`, error);
-            // Continue with other providers
           }
         }
       }
