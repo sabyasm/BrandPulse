@@ -188,31 +188,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start brand analysis
   app.post("/api/brand-monitor/analyze", async (req, res) => {
     try {
-      const data = insertBrandAnalysisSchema.parse(req.body);
-      const { apiKey, companyId } = req.body;
+      const { apiKey, companyId, analysisType } = req.body;
       
       if (!apiKey) {
         return res.status(400).json({ error: "OpenRouter API key is required" });
       }
 
+      const currentAnalysisType = analysisType || "brand";
+      
+      // For competitor analysis, we don't need a company
+      if (currentAnalysisType === "competitor") {
+        const data = {
+          ...req.body,
+          companyId: null, // No company needed for competitor analysis
+        };
+        delete data.apiKey; // Remove apiKey from data before validation
+        
+        const validatedData = insertBrandAnalysisSchema.parse(data);
+        
+        // Create analysis without company requirement
+        const analysis = await storage.createBrandAnalysis(validatedData);
+
+        // Start competitor analysis in background
+        processCompetitorAnalysis(analysis.id, apiKey, validatedData.selectedProviders as string[], validatedData.selectedPrompts as string[]);
+        
+        res.json(analysis);
+        return;
+      }
+
+      // For brand analysis, we need a company
       const company = await storage.getCompany(companyId);
       if (!company) {
         return res.status(404).json({ error: "Company not found" });
       }
 
-      // Create analysis record
+      const data = { ...req.body };
+      delete data.apiKey; // Remove apiKey from data before validation
+      const validatedData = insertBrandAnalysisSchema.parse(data);
+
+      // Create brand analysis record
       const analysis = await storage.createBrandAnalysis({
-        ...data,
+        ...validatedData,
         companyId,
       });
 
-      // Start analysis in background
-      const analysisType = data.analysisType || "brand";
-      if (analysisType === "competitor") {
-        processCompetitorAnalysis(analysis.id, apiKey, data.selectedProviders as string[], data.selectedPrompts as string[]);
-      } else {
-        processBrandAnalysis(analysis.id, apiKey, company, data.selectedProviders as string[], data.selectedPrompts as string[]);
-      }
+      // Start brand analysis in background
+      processBrandAnalysis(analysis.id, apiKey, company, validatedData.selectedProviders as string[], validatedData.selectedPrompts as string[]);
       
       res.json(analysis);
     } catch (error: any) {

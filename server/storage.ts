@@ -93,6 +93,7 @@ export class MemStorage implements IStorage {
       ...insertAnalysis,
       id,
       userId: 1, // Mock user ID for simplified storage
+      companyId: insertAnalysis.companyId || null,
       status: insertAnalysis.status || "pending",
       progress: insertAnalysis.progress || 0,
       overallScore: insertAnalysis.overallScore || null,
@@ -102,6 +103,7 @@ export class MemStorage implements IStorage {
         providerResponses: [],
         competitors: [],
         insights: [],
+        competitorResults: [],
       },
       createdAt: now,
       updatedAt: now,
