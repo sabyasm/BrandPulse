@@ -48,9 +48,9 @@ function extractCompetitorRecommendations(response: string, prompt: string) {
     for (const match of matches) {
       const name = (match[2] || match[1])?.trim();
       if (name && name.length > 2 && name.length < 50) {
-        // Filter out common words that might be captured
-        const commonWords = ['Why', 'What', 'How', 'The', 'This', 'That', 'These', 'Those', 'Here', 'There', 'When', 'Where', 'While', 'Although', 'However', 'Therefore', 'Moreover', 'Furthermore'];
-        if (commonWords.includes(name)) continue;
+        // Filter out common words and phrases that might be captured
+        const commonWords = ['Why', 'What', 'How', 'The', 'This', 'That', 'These', 'Those', 'Here', 'There', 'When', 'Where', 'While', 'Although', 'However', 'Therefore', 'Moreover', 'Furthermore', 'Best for', 'Why it', 'standard', 'top choice', 'gement tools', 'sk management'];
+        if (commonWords.some(word => name.toLowerCase().includes(word.toLowerCase()))) continue;
         
         // Check if already exists
         if (recommendations.find(r => r.name.toLowerCase() === name.toLowerCase())) continue;
