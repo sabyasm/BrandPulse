@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +15,11 @@ export default function CompetitorPromptSection({ onPromptsChange }: CompetitorP
     "Which bank should I choose if I am a new immigrant in Canada with no Canadian history?"
   ]);
   const [newPrompt, setNewPrompt] = useState("");
+
+  // Notify parent of initial prompts on component mount
+  useEffect(() => {
+    onPromptsChange(customPrompts);
+  }, []); // Only run on mount
 
   const predefinedPrompts = [
     "Which bank should I choose if I am a new immigrant in Canada with no Canadian history?",
