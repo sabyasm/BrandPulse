@@ -1,8 +1,9 @@
 export const AVAILABLE_MODELS = [
-  { id: "openai/gpt-4", name: "GPT-4", provider: "OpenAI" },
-  { id: "anthropic/claude-3-sonnet", name: "Claude 3", provider: "Anthropic" },
-  { id: "google/gemini-pro", name: "Gemini Pro", provider: "Google" },
-  { id: "perplexity/sonar-medium-online", name: "Perplexity", provider: "Perplexity" },
+  { id: "google/gemini-2.5-flash", name: "Gemini 2.5", provider: "Google" },
+  { id: "deepseek/deepseek-chat-v3-0324", name: "DeepSeek v3", provider: "DeepSeek" },
+  { id: "x-ai/grok-4", name: "Grok 4", provider: "xAI" },
+  { id: "openai/gpt-4.1", name: "OpenAI GPT4.1", provider: "OpenAI" },
+  { id: "anthropic/claude-sonnet-4", name: "Claude 4", provider: "Anthropic" },
 ];
 
 export async function testOpenRouterKey(apiKey: string): Promise<boolean> {

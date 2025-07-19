@@ -442,6 +442,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             await storage.updateBrandAnalysis(analysisId, {
               progress,
+              results: {
+                providerResponses: [],
+                competitors: [],
+                insights: [],
+                competitorResults: [...competitorResults],
+              },
             });
           } catch (error) {
             console.error(`Error calling ${model.name}:`, error);
