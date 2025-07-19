@@ -1,0 +1,102 @@
+# FireGEO Brand Monitor
+
+## Overview
+
+FireGEO Brand Monitor is a full-stack web application that analyzes brand visibility and competitive positioning using AI models. The application allows users to input company URLs, extract company information, and run brand analysis across multiple AI providers to understand how well their brand performs in AI-generated responses.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
+
+## System Architecture
+
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Bundler**: Vite for development and build processes
+- **Routing**: Wouter for client-side routing
+- **State Management**: TanStack Query (React Query) for server state management
+- **UI Framework**: Shadcn/ui components built on Radix UI primitives
+- **Styling**: Tailwind CSS with CSS variables for theming
+- **Form Handling**: React Hook Form with Zod validation
+
+### Backend Architecture
+- **Runtime**: Node.js with Express.js
+- **Language**: TypeScript with ES modules
+- **Database**: PostgreSQL with Drizzle ORM
+- **Database Provider**: Neon Database (serverless PostgreSQL)
+- **API Integration**: OpenRouter API for multiple AI model access
+- **Session Management**: Express sessions with PostgreSQL storage
+
+### Build System
+- **Development**: tsx for TypeScript execution in development
+- **Production**: esbuild for server bundling, Vite for client bundling
+- **Database Migrations**: Drizzle Kit for schema management
+
+## Key Components
+
+### Database Schema
+- **Users**: User authentication and management
+- **Companies**: Extracted company information (name, URL, description, industry, etc.)
+- **Brand Analyses**: Analysis configurations, progress tracking, and results storage
+- **Results Structure**: Provider responses, competitor analysis, and insights
+
+### Core Features
+1. **Company Information Extraction**: Extracts company details from URLs
+2. **AI Provider Integration**: Supports multiple AI models via OpenRouter
+3. **Industry-Specific Prompts**: Pre-configured prompts for different industries
+4. **Progress Tracking**: Real-time analysis progress monitoring
+5. **Results Analysis**: Comprehensive brand visibility scoring and competitor comparison
+
+### UI Components
+- **Dashboard**: Main interface with sidebar navigation
+- **URL Input Section**: Company URL extraction and API key management
+- **Industry Prompts**: Industry-specific analysis configuration
+- **Progress Tracking**: Real-time analysis status updates
+- **Results Display**: Tabbed interface showing analysis results
+
+## Data Flow
+
+1. **User Input**: User provides company URL and configures analysis parameters
+2. **Company Extraction**: System extracts company information (mock implementation)
+3. **Analysis Configuration**: User selects AI providers, prompts, and settings
+4. **AI Processing**: System queries multiple AI providers with configured prompts
+5. **Results Aggregation**: Responses are analyzed for brand mentions and scoring
+6. **Visualization**: Results are displayed with competitive analysis and insights
+
+## External Dependencies
+
+### AI Integration
+- **OpenRouter API**: Primary integration for accessing multiple AI models
+- **Supported Models**: OpenAI GPT-4, Anthropic Claude, Google Gemini, Perplexity Sonar
+- **Authentication**: API key-based authentication
+
+### Database
+- **Neon Database**: Serverless PostgreSQL provider
+- **Connection**: Environment-based connection string
+- **ORM**: Drizzle ORM with TypeScript type safety
+
+### Development Tools
+- **Replit Integration**: Development environment optimizations
+- **Error Handling**: Runtime error overlay for development
+- **Hot Reload**: Vite HMR for frontend, tsx for backend
+
+## Deployment Strategy
+
+### Development Environment
+- **Frontend**: Vite dev server with HMR
+- **Backend**: tsx with auto-restart
+- **Database**: Development database via Neon
+- **Environment**: Replit-optimized development setup
+
+### Production Build
+- **Frontend**: Static assets built with Vite
+- **Backend**: Bundled with esbuild for Node.js deployment
+- **Database**: Production PostgreSQL via Neon
+- **Serving**: Express serves both API and static frontend
+
+### Configuration Management
+- **Environment Variables**: Database URL, API keys
+- **Build Scripts**: Separate development and production configurations
+- **Type Safety**: Full TypeScript coverage across frontend and backend
+
+The application follows a monorepo structure with shared TypeScript types between frontend and backend, ensuring type safety across the entire stack. The architecture supports real-time analysis tracking and can be extended to support additional AI providers and analysis types.
