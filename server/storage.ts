@@ -65,6 +65,11 @@ export class MemStorage implements IStorage {
     const company: Company = {
       ...insertCompany,
       id,
+      description: insertCompany.description || null,
+      industry: insertCompany.industry || null,
+      founded: insertCompany.founded || null,
+      employees: insertCompany.employees || null,
+      logo: insertCompany.logo || null,
       createdAt: new Date(),
     };
     this.companies.set(id, company);
@@ -87,6 +92,17 @@ export class MemStorage implements IStorage {
     const analysis: BrandAnalysis = {
       ...insertAnalysis,
       id,
+      userId: 1, // Mock user ID for simplified storage
+      status: insertAnalysis.status || "pending",
+      progress: insertAnalysis.progress || 0,
+      overallScore: insertAnalysis.overallScore || null,
+      topProvider: insertAnalysis.topProvider || null,
+      improvementArea: insertAnalysis.improvementArea || null,
+      results: insertAnalysis.results || {
+        providerResponses: [],
+        competitors: [],
+        insights: [],
+      },
       createdAt: now,
       updatedAt: now,
     };

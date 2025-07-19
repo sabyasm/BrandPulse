@@ -1,8 +1,13 @@
-# FireGEO Brand Monitor
+# BrandGEO Monitor
 
 ## Overview
 
-FireGEO Brand Monitor is a full-stack web application that analyzes brand visibility and competitive positioning using AI models. The application allows users to input company URLs, extract company information, and run brand analysis across multiple AI providers to understand how well their brand performs in AI-generated responses.
+BrandGEO Monitor is a full-stack web application that analyzes brand visibility and competitive positioning using AI models. The application provides two main analysis modes:
+
+1. **Brand Monitor**: Analyzes how AI models rank your brand against competitors
+2. **Competitor Monitor**: Discovers which brands AI models recommend in response to specific queries
+
+The application uses OpenRouter API for accessing multiple AI providers and provides comprehensive analysis of brand visibility across different AI models.
 
 ## User Preferences
 
@@ -41,11 +46,24 @@ Preferred communication style: Simple, everyday language.
 - **Results Structure**: Provider responses, competitor analysis, and insights
 
 ### Core Features
-1. **Company Information Extraction**: Extracts company details from URLs
-2. **AI Provider Integration**: Supports multiple AI models via OpenRouter
-3. **Industry-Specific Prompts**: Pre-configured prompts for different industries
+1. **Company Information Extraction**: Extracts company details from URLs (for brand monitoring)
+2. **AI Provider Integration**: Supports multiple AI models via OpenRouter (GPT-4, Claude 3, Gemini Pro, Perplexity)
+3. **Dual Analysis Modes**: 
+   - Brand monitoring with industry-specific prompts
+   - Competitor monitoring with custom user prompts
 4. **Progress Tracking**: Real-time analysis progress monitoring
-5. **Results Analysis**: Comprehensive brand visibility scoring and competitor comparison
+5. **Results Analysis**: 
+   - Brand visibility scoring and competitor comparison
+   - Competitor recommendation tracking showing which LLM recommends which brand
+6. **Custom Prompt Support**: Users can add custom prompts for competitor analysis
+
+## Recent Changes (July 19, 2025)
+✓ Updated branding from "FireGEO Monitor" to "BrandGEO Monitor"
+✓ Added competitor monitoring functionality with custom prompts
+✓ Implemented dual-mode interface (Brand Monitor / Competitor Monitor)
+✓ Added competitor results display showing which AI models recommend which brands
+✓ Enhanced schema to support competitor analysis type and results
+✓ Created competitor-specific UI components and analysis workflows
 
 ### UI Components
 - **Dashboard**: Main interface with sidebar navigation

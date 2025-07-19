@@ -66,6 +66,7 @@ export function useBrandAnalysis() {
       selectedPrompts: string[];
       webSearchEnabled: boolean;
       title: string;
+      analysisType?: string;
     }) => {
       const response = await apiRequest("POST", "/api/brand-monitor/analyze", data);
       return response.json() as Promise<BrandAnalysis>;

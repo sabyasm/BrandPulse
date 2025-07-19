@@ -13,6 +13,48 @@ const AVAILABLE_MODELS = [
   { id: "perplexity/sonar-medium-online", name: "Perplexity Sonar", provider: "Perplexity" },
 ];
 
+function extractCompetitorRecommendations(response: string, prompt: string) {
+  const recommendations: Array<{
+    name: string;
+    ranking: number;
+    reason: string;
+  }> = [];
+  
+  // Split response into sentences and look for patterns
+  const sentences = response.split(/[.!?]/);
+  let currentRanking = 1;
+  
+  // Look for numbered lists or ranking patterns
+  const rankingPatterns = [
+    /(\d+)\.\s*([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))/gi,
+    /(?:first|second|third|fourth|fifth|1st|2nd|3rd|4th|5th)[:\s]+([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))/gi,
+    /recommend[s]?\s+([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))/gi,
+    /([A-Z][^,\n]+(?:Bank|Credit Union|Financial|Corp|Inc|LLC|Ltd))\s+(?:is|would be|stands out)/gi
+  ];
+  
+  rankingPatterns.forEach(pattern => {
+    const matches = Array.from(response.matchAll(pattern));
+    for (const match of matches) {
+      const name = match[2] || match[1];
+      if (name && !recommendations.find(r => r.name.toLowerCase() === name.toLowerCase())) {
+        // Find context/reason in surrounding text
+        const matchIndex = response.indexOf(match[0]);
+        const contextStart = Math.max(0, matchIndex - 100);
+        const contextEnd = Math.min(response.length, matchIndex + 200);
+        const context = response.slice(contextStart, contextEnd);
+        
+        recommendations.push({
+          name: name.trim(),
+          ranking: currentRanking++,
+          reason: context.trim()
+        });
+      }
+    }
+  });
+  
+  return recommendations;
+}
+
 async function callOpenRouter(apiKey: string, model: string, prompt: string) {
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
@@ -20,7 +62,7 @@ async function callOpenRouter(apiKey: string, model: string, prompt: string) {
       "Authorization": `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": process.env.BETTER_AUTH_URL || "http://localhost:5000",
-      "X-Title": "FireGEO Brand Monitor",
+      "X-Title": "BrandGEO Monitor",
     },
     body: JSON.stringify({
       model,
@@ -69,7 +111,8 @@ function analyzeBrandMention(response: string, brandName: string) {
         // Count unique company names mentioned before this point
         const beforeText = sentences.slice(0, i).join(" ");
         const companyPattern = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:Inc|Corp|LLC|Ltd|Solutions|Technologies|Systems))\b/g;
-        const companiesBefore = [...beforeText.matchAll(companyPattern)];
+        const matches = beforeText.matchAll(companyPattern);
+        const companiesBefore = Array.from(matches);
         position = companiesBefore.length + 1;
         break;
       }
@@ -160,12 +203,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create analysis record
       const analysis = await storage.createBrandAnalysis({
         ...data,
-        userId: 1, // Mock user ID - in real app would get from session
         companyId,
       });
 
       // Start analysis in background
-      processAnalysis(analysis.id, apiKey, company, data.selectedProviders, data.selectedPrompts);
+      const analysisType = data.analysisType || "brand";
+      if (analysisType === "competitor") {
+        processCompetitorAnalysis(analysis.id, apiKey, data.selectedProviders as string[], data.selectedPrompts as string[]);
+      } else {
+        processBrandAnalysis(analysis.id, apiKey, company, data.selectedProviders as string[], data.selectedPrompts as string[]);
+      }
       
       res.json(analysis);
     } catch (error: any) {
@@ -211,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  async function processAnalysis(
+  async function processBrandAnalysis(
     analysisId: number,
     apiKey: string,
     company: any,
@@ -224,7 +271,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         progress: 0,
       });
 
-      const providerResponses = [];
+      const providerResponses: Array<{
+        provider: string;
+        prompt: string;
+        response: string;
+        brandMentioned: boolean;
+        position?: number;
+        score: number;
+      }> = [];
       const totalCalls = selectedProviders.length * selectedPrompts.length;
       let completedCalls = 0;
 
@@ -314,6 +368,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Analysis processing error:", error);
+      await storage.updateBrandAnalysis(analysisId, {
+        status: "failed",
+      });
+    }
+  }
+
+  async function processCompetitorAnalysis(
+    analysisId: number,
+    apiKey: string,
+    selectedProviders: string[],
+    selectedPrompts: string[]
+  ) {
+    try {
+      await storage.updateBrandAnalysis(analysisId, {
+        status: "in_progress",
+        progress: 0,
+      });
+
+      const competitorResults: Array<{
+        prompt: string;
+        provider: string;
+        response: string;
+        recommendedBrands: Array<{
+          name: string;
+          ranking: number;
+          reason: string;
+        }>;
+      }> = [];
+      
+      const totalCalls = selectedProviders.length * selectedPrompts.length;
+      let completedCalls = 0;
+
+      for (const providerId of selectedProviders) {
+        const model = AVAILABLE_MODELS.find(m => m.id === providerId);
+        if (!model) continue;
+
+        for (const prompt of selectedPrompts) {
+          try {
+            const response = await callOpenRouter(apiKey, providerId, prompt);
+            const recommendations = extractCompetitorRecommendations(response, prompt);
+            
+            competitorResults.push({
+              prompt,
+              provider: model.name,
+              response,
+              recommendedBrands: recommendations,
+            });
+
+            completedCalls++;
+            const progress = Math.round((completedCalls / totalCalls) * 100);
+            
+            await storage.updateBrandAnalysis(analysisId, {
+              progress,
+            });
+          } catch (error) {
+            console.error(`Error calling ${model.name}:`, error);
+            // Continue with other providers
+          }
+        }
+      }
+
+      // Aggregate results
+      const brandMentions = new Map<string, { count: number; avgRanking: number; providers: string[] }>();
+      
+      competitorResults.forEach(result => {
+        result.recommendedBrands.forEach(brand => {
+          const existing = brandMentions.get(brand.name.toLowerCase()) || {
+            count: 0,
+            avgRanking: 0,
+            providers: []
+          };
+          
+          existing.count++;
+          existing.avgRanking = ((existing.avgRanking * (existing.count - 1)) + brand.ranking) / existing.count;
+          if (!existing.providers.includes(result.provider)) {
+            existing.providers.push(result.provider);
+          }
+          
+          brandMentions.set(brand.name.toLowerCase(), existing);
+        });
+      });
+
+      // Complete analysis
+      await storage.updateBrandAnalysis(analysisId, {
+        status: "completed",
+        progress: 100,
+        results: {
+          providerResponses: [],
+          competitors: [],
+          insights: [],
+          competitorResults,
+        },
+      });
+
+    } catch (error) {
+      console.error("Competitor analysis processing error:", error);
       await storage.updateBrandAnalysis(analysisId, {
         status: "failed",
       });

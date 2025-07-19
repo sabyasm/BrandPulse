@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import ResultsTabs from "./results-tabs";
 import { apiRequest } from "@/lib/queryClient";
+import CompetitorResults from "./competitor-results";
 import type { BrandAnalysis } from "@shared/schema";
 
 interface AnalysisResultsProps {
@@ -46,6 +47,9 @@ export default function AnalysisResults({ analysisId }: AnalysisResultsProps) {
     console.log("Saving analysis...");
   };
 
+  // Check if this is a competitor analysis
+  const isCompetitorAnalysis = analysis.analysisType === "competitor";
+
   return (
     <div className="space-y-8">
       {/* Results Header */}
@@ -53,9 +57,14 @@ export default function AnalysisResults({ analysisId }: AnalysisResultsProps) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Analysis Results</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {isCompetitorAnalysis ? "Competitor Analysis Results" : "Brand Analysis Results"}
+              </h2>
               <p className="text-gray-600">
-                Brand visibility analysis across {analysis.selectedProviders.length} AI providers
+                {isCompetitorAnalysis 
+                  ? `Competitor recommendations across ${analysis.selectedProviders.length} AI providers`
+                  : `Brand visibility analysis across ${analysis.selectedProviders.length} AI providers`
+                }
               </p>
             </div>
             
@@ -71,7 +80,12 @@ export default function AnalysisResults({ analysisId }: AnalysisResultsProps) {
             </div>
           </div>
 
-          <ResultsTabs analysis={analysis} />
+          {/* Results */}
+          {isCompetitorAnalysis ? (
+            <CompetitorResults analysis={analysis} />
+          ) : (
+            <ResultsTabs analysis={analysis} />
+          )}
         </CardContent>
       </Card>
     </div>

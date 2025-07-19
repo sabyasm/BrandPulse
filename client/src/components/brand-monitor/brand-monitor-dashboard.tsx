@@ -1,18 +1,23 @@
 import { useState } from "react";
-import { Flame, Menu, X, Coins, ChevronDown } from "lucide-react";
+import { Flame, Menu, X, Coins, ChevronDown, Target, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UrlInputSection from "./url-input-section";
 import CompanyInfoCard from "./company-info-card";
 import IndustryPromptsSection from "./industry-prompts-section";
+import CompetitorPromptSection from "./competitor-prompt-section";
 import AnalysisControls from "./analysis-controls";
 import AnalysisProgress from "./analysis-progress";
 import AnalysisResults from "./analysis-results";
+import CompetitorResults from "./competitor-results";
 import AnalysisHistorySidebar from "./analysis-history-sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function BrandMonitorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<number | null>(null);
+  const [analysisMode, setAnalysisMode] = useState<"brand" | "competitor">("brand");
+  const [competitorPrompts, setCompetitorPrompts] = useState<string[]>([]);
   const isMobile = useIsMobile();
 
   return (
@@ -27,21 +32,22 @@ export default function BrandMonitorDashboard() {
                 <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-yellow-500 rounded-lg flex items-center justify-center">
                   <Flame className="w-4 h-4 text-white" />
                 </div>
-                <h1 className="text-xl font-bold text-gray-900">FireGEO Monitor</h1>
+                <h1 className="text-xl font-bold text-gray-900">BrandGEO Monitor</h1>
               </div>
               
-              {/* Navigation Pills */}
-              <nav className="hidden lg:flex space-x-1">
-                <Button variant="secondary" size="sm" className="bg-blue-50 text-blue-700 hover:bg-blue-100">
-                  Brand Monitor
-                </Button>
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                  Analytics
-                </Button>
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
-                  Reports
-                </Button>
-              </nav>
+              {/* Mode Selector */}
+              <Tabs value={analysisMode} onValueChange={(value) => setAnalysisMode(value as "brand" | "competitor")} className="hidden lg:block">
+                <TabsList className="grid w-fit grid-cols-2">
+                  <TabsTrigger value="brand" className="flex items-center space-x-2">
+                    <Target className="w-4 h-4" />
+                    <span>Brand Monitor</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="competitor" className="flex items-center space-x-2">
+                    <Users className="w-4 h-4" />
+                    <span>Competitor Monitor</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
             {/* Right Side Actions */}
@@ -101,18 +107,53 @@ export default function BrandMonitorDashboard() {
                     AI-Powered Brand Intelligence
                   </div>
                   <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-                    Track Your Brand's AI Visibility
+                    {analysisMode === "brand" 
+                      ? "Track Your Brand's AI Visibility"
+                      : "Monitor AI Competitor Recommendations"
+                    }
                   </h1>
                   <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Analyze how AI models rank your brand against competitors across multiple providers and optimize your digital presence.
+                    {analysisMode === "brand"
+                      ? "Analyze how AI models rank your brand against competitors across multiple providers and optimize your digital presence."
+                      : "Discover which brands AI models recommend in response to specific queries and understand competitive positioning."
+                    }
                   </p>
                 </div>
 
-                <UrlInputSection />
-                <CompanyInfoCard />
-                <IndustryPromptsSection />
-                <AnalysisControls />
-                <AnalysisProgress />
+                {/* Mobile Mode Selector */}
+                <div className="lg:hidden mb-8">
+                  <Tabs value={analysisMode} onValueChange={(value) => setAnalysisMode(value as "brand" | "competitor")}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="brand" className="flex items-center space-x-2">
+                        <Target className="w-4 h-4" />
+                        <span>Brand Monitor</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="competitor" className="flex items-center space-x-2">
+                        <Users className="w-4 h-4" />
+                        <span>Competitor Monitor</span>
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+
+                {analysisMode === "brand" ? (
+                  <>
+                    <UrlInputSection />
+                    <CompanyInfoCard />
+                    <IndustryPromptsSection />
+                    <AnalysisControls />
+                    <AnalysisProgress />
+                  </>
+                ) : (
+                  <>
+                    <CompetitorPromptSection onPromptsChange={setCompetitorPrompts} />
+                    <AnalysisControls 
+                      mode="competitor" 
+                      prompts={competitorPrompts}
+                    />
+                    <AnalysisProgress />
+                  </>
+                )}
               </>
             )}
           </div>

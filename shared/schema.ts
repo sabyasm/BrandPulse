@@ -25,6 +25,7 @@ export const brandAnalyses = pgTable("brand_analyses", {
   userId: integer("user_id").references(() => users.id),
   companyId: integer("company_id").references(() => companies.id),
   title: text("title").notNull(),
+  analysisType: text("analysis_type").notNull().default("brand"), // brand, competitor
   status: text("status").notNull().default("pending"), // pending, in_progress, completed, failed
   selectedProviders: jsonb("selected_providers").$type<string[]>().notNull(),
   selectedPrompts: jsonb("selected_prompts").$type<string[]>().notNull(),
@@ -41,6 +42,11 @@ export const brandAnalyses = pgTable("brand_analyses", {
       brandMentioned: boolean;
       position?: number;
       score: number;
+      mentionedBrands?: Array<{
+        name: string;
+        position: number;
+        context: string;
+      }>;
     }>;
     competitors: Array<{
       name: string;
@@ -52,6 +58,16 @@ export const brandAnalyses = pgTable("brand_analyses", {
       type: "opportunity" | "gap" | "strength";
       title: string;
       description: string;
+    }>;
+    competitorResults?: Array<{
+      prompt: string;
+      provider: string;
+      response: string;
+      recommendedBrands: Array<{
+        name: string;
+        ranking: number;
+        reason: string;
+      }>;
     }>;
   }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
