@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Crown, TrendingUp, Users, Plus, Minus, CheckCircle, XCircle, Lightbulb, Star } from "lucide-react";
+import { Crown, TrendingUp, Users, Plus, Minus, CheckCircle, XCircle, Lightbulb, Star, AlertCircle } from "lucide-react";
 import type { BrandAnalysis } from "@shared/schema";
 
 interface EnhancedCompetitorResultsProps {
@@ -11,9 +11,16 @@ interface EnhancedCompetitorResultsProps {
 export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetitorResultsProps) {
   const { results } = analysis;
   
-  if (!results?.aggregatedAnalysis) return null;
+  if (!results?.aggregatedAnalysis) {
+    console.log('No aggregated analysis found in results:', results);
+    return null;
+  }
 
   const { aggregatedAnalysis, enhancedPrompt } = results;
+  console.log('Enhanced results data:', { 
+    brands: aggregatedAnalysis.reportByBrand?.length || 0, 
+    providers: aggregatedAnalysis.reportByProvider?.length || 0 
+  });
 
   return (
     <div className="space-y-8">
@@ -46,7 +53,7 @@ export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetit
           <TabsTrigger value="by-provider">Report by AI Provider</TabsTrigger>
         </TabsList>
 
-        {/* Report by Brand (similar to attached image) */}
+        {/* Report by Brand */}
         <TabsContent value="by-brand" className="space-y-6 mt-6">
           <Card>
             <CardHeader>
@@ -62,111 +69,123 @@ export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetit
             </CardHeader>
           </Card>
 
-          {aggregatedAnalysis.reportByBrand.map((brandReport, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-gray-900">{brandReport.brandName}</h3>
-                  <div className="flex items-center space-x-2">
-                    <Star className="w-5 h-5 text-yellow-500" />
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                      Rank #{brandReport.overallRanking}
-                    </Badge>
+          {aggregatedAnalysis.reportByBrand && aggregatedAnalysis.reportByBrand.length > 0 ? (
+            aggregatedAnalysis.reportByBrand.map((brandReport, index) => (
+              <Card key={index} className="overflow-hidden">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900">{brandReport.brandName}</h3>
+                    <div className="flex items-center space-x-2">
+                      <Star className="w-5 h-5 text-yellow-500" />
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                        Rank #{brandReport.overallRanking}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
+                </CardHeader>
 
-              <CardContent className="space-y-6">
-                {/* AI Providers Think Section */}
-                <div>
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">AI Providers say</h4>
-                  <p className="text-gray-700 mb-4">
-                    AI Providers like the {brandReport.aiProvidersThink.keyFeatures.join(', ').toLowerCase()}, and {brandReport.aiProvidersThink.positiveAspects.join(', ').toLowerCase()}. They mention it {brandReport.aiProvidersThink.positiveAspects.length > 0 ? 'works well' : 'has some considerations'} with the {brandReport.aiProvidersThink.negativeAspects.join(' and ').toLowerCase()}. However, some providers have {brandReport.aiProvidersThink.negativeAspects.length > 0 ? 'reported concerns with' : 'noted aspects about'} the {brandReport.aiProvidersThink.negativeAspects.join(' and ').toLowerCase()}. Opinions are mixed on the overall value and ease of use.
-                  </p>
-                  <p className="text-xs text-gray-500 mb-4">Generated from the analysis of AI provider responses</p>
+                <CardContent className="space-y-6">
+                  {/* AI Providers Think Section */}
+                  <div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-4">AI Providers say</h4>
+                    <p className="text-gray-700 mb-4">
+                      AI Providers like the {brandReport.aiProvidersThink.keyFeatures.join(', ').toLowerCase()}, and {brandReport.aiProvidersThink.positiveAspects.join(', ').toLowerCase()}. They mention it {brandReport.aiProvidersThink.positiveAspects.length > 0 ? 'works well' : 'has some considerations'} with the {brandReport.aiProvidersThink.negativeAspects.join(' and ').toLowerCase()}. However, some providers have {brandReport.aiProvidersThink.negativeAspects.length > 0 ? 'reported concerns with' : 'noted aspects about'} the {brandReport.aiProvidersThink.negativeAspects.join(' and ').toLowerCase()}. Opinions are mixed on the overall value and ease of use.
+                    </p>
+                    <p className="text-xs text-gray-500 mb-4">Generated from the analysis of AI provider responses</p>
 
-                  <div className="mb-4">
-                    <p className="text-sm font-medium text-gray-900 mb-2">Select to learn more</p>
-                    <div className="flex flex-wrap gap-2">
-                      {brandReport.aiProvidersThink.keyFeatures.map((feature, idx) => (
-                        <Badge key={idx} variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          {feature}
-                        </Badge>
-                      ))}
-                      {brandReport.aiProvidersThink.positiveAspects.map((positive, idx) => (
-                        <Badge key={idx} variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          {positive}
-                        </Badge>
-                      ))}
-                      {brandReport.aiProvidersThink.negativeAspects.slice(0, 3).map((negative, idx) => (
-                        <Badge key={idx} variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
-                          <XCircle className="w-3 h-3 mr-1" />
-                          {negative}
-                        </Badge>
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-900 mb-2">Select to learn more</p>
+                      <div className="flex flex-wrap gap-2">
+                        {brandReport.aiProvidersThink.keyFeatures.map((feature, idx) => (
+                          <Badge key={idx} variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            {feature}
+                          </Badge>
+                        ))}
+                        {brandReport.aiProvidersThink.positiveAspects.map((positive, idx) => (
+                          <Badge key={idx} variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            {positive}
+                          </Badge>
+                        ))}
+                        {brandReport.aiProvidersThink.negativeAspects.slice(0, 3).map((negative, idx) => (
+                          <Badge key={idx} variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            {negative}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Provider Insights Breakdown */}
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Provider Rankings & Insights</h4>
+                    <div className="grid gap-3">
+                      {brandReport.providerInsights.map((insight, idx) => (
+                        <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                              {insight.provider}
+                            </Badge>
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-700">
+                              Rank #{insight.ranking}
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid md:grid-cols-2 gap-3">
+                            {insight.positives.length > 0 && (
+                              <div className="space-y-1">
+                                <div className="flex items-center space-x-2 text-sm font-medium text-green-700">
+                                  <Plus className="w-4 h-4" />
+                                  <span>Strengths</span>
+                                </div>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                  {insight.positives.map((positive, i) => (
+                                    <li key={i} className="flex items-start space-x-2">
+                                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                                      <span>{positive}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            
+                            {insight.negatives.length > 0 && (
+                              <div className="space-y-1">
+                                <div className="flex items-center space-x-2 text-sm font-medium text-orange-700">
+                                  <Minus className="w-4 h-4" />
+                                  <span>Considerations</span>
+                                </div>
+                                <ul className="text-sm text-gray-600 space-y-1">
+                                  {insight.negatives.map((negative, i) => (
+                                    <li key={i} className="flex items-start space-x-2">
+                                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0" />
+                                      <span>{negative}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <AlertCircle className="w-8 h-8 text-gray-400" />
                 </div>
-
-                {/* Provider Insights Breakdown */}
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Provider Rankings & Insights</h4>
-                  <div className="grid gap-3">
-                    {brandReport.providerInsights.map((insight, idx) => (
-                      <div key={idx} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                            {insight.provider}
-                          </Badge>
-                          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                            Rank #{insight.ranking}
-                          </Badge>
-                        </div>
-                        
-                        <div className="grid md:grid-cols-2 gap-3">
-                          {insight.positives.length > 0 && (
-                            <div className="space-y-1">
-                              <div className="flex items-center space-x-2 text-sm font-medium text-green-700">
-                                <Plus className="w-4 h-4" />
-                                <span>Strengths</span>
-                              </div>
-                              <ul className="text-sm text-gray-600 space-y-1">
-                                {insight.positives.map((positive, i) => (
-                                  <li key={i} className="flex items-start space-x-2">
-                                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0" />
-                                    <span>{positive}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                          
-                          {insight.negatives.length > 0 && (
-                            <div className="space-y-1">
-                              <div className="flex items-center space-x-2 text-sm font-medium text-orange-700">
-                                <Minus className="w-4 h-4" />
-                                <span>Considerations</span>
-                              </div>
-                              <ul className="text-sm text-gray-600 space-y-1">
-                                {insight.negatives.map((negative, i) => (
-                                  <li key={i} className="flex items-start space-x-2">
-                                    <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0" />
-                                    <span>{negative}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-gray-500 mb-2">No brand analysis data available</p>
+                <p className="text-sm text-gray-400">The analysis may still be processing or there was an issue with data aggregation.</p>
               </CardContent>
             </Card>
-          ))}
+          )}
         </TabsContent>
 
         {/* Report by Provider */}
@@ -185,72 +204,84 @@ export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetit
             </CardHeader>
           </Card>
 
-          {aggregatedAnalysis.reportByProvider.map((providerReport, index) => (
-            <Card key={index}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-gray-900">{providerReport.provider}</h3>
-                  <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                    {providerReport.brandRankings.length} brands evaluated
-                  </Badge>
-                </div>
-              </CardHeader>
+          {aggregatedAnalysis.reportByProvider && aggregatedAnalysis.reportByProvider.length > 0 ? (
+            aggregatedAnalysis.reportByProvider.map((providerReport, index) => (
+              <Card key={index}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold text-gray-900">{providerReport.provider}</h3>
+                    <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                      {providerReport.brandRankings.length} brands evaluated
+                    </Badge>
+                  </div>
+                </CardHeader>
 
-              <CardContent>
-                <div className="space-y-4">
-                  {providerReport.brandRankings.map((brand, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center space-x-3">
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                            #{brand.ranking}
-                          </Badge>
-                          <h4 className="font-medium text-gray-900">{brand.name}</h4>
+                <CardContent>
+                  <div className="space-y-4">
+                    {providerReport.brandRankings.map((brand, idx) => (
+                      <div key={idx} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                              #{brand.ranking}
+                            </Badge>
+                            <h4 className="font-medium text-gray-900">{brand.name}</h4>
+                          </div>
+                          <Crown className="w-5 h-5 text-yellow-500" />
                         </div>
-                        <Crown className="w-5 h-5 text-yellow-500" />
-                      </div>
 
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {brand.positives.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2 text-sm font-medium text-green-700">
-                              <Plus className="w-4 h-4" />
-                              <span>Why {providerReport.provider} likes it</span>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {brand.positives.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2 text-sm font-medium text-green-700">
+                                <Plus className="w-4 h-4" />
+                                <span>Why {providerReport.provider} likes it</span>
+                              </div>
+                              <ul className="text-sm text-gray-600 space-y-1">
+                                {brand.positives.map((positive, i) => (
+                                  <li key={i} className="flex items-start space-x-2">
+                                    <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                    <span>{positive}</span>
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
-                            <ul className="text-sm text-gray-600 space-y-1">
-                              {brand.positives.map((positive, i) => (
-                                <li key={i} className="flex items-start space-x-2">
-                                  <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                                  <span>{positive}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                          )}
 
-                        {brand.negatives.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2 text-sm font-medium text-orange-700">
-                              <Minus className="w-4 h-4" />
-                              <span>Potential concerns</span>
+                          {brand.negatives.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2 text-sm font-medium text-orange-700">
+                                <Minus className="w-4 h-4" />
+                                <span>Potential concerns</span>
+                              </div>
+                              <ul className="text-sm text-gray-600 space-y-1">
+                                {brand.negatives.map((negative, i) => (
+                                  <li key={i} className="flex items-start space-x-2">
+                                    <XCircle className="w-3 h-3 text-orange-500 mt-0.5 flex-shrink-0" />
+                                    <span>{negative}</span>
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
-                            <ul className="text-sm text-gray-600 space-y-1">
-                              {brand.negatives.map((negative, i) => (
-                                <li key={i} className="flex items-start space-x-2">
-                                  <XCircle className="w-3 h-3 text-orange-500 mt-0.5 flex-shrink-0" />
-                                  <span>{negative}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center mb-4">
+                  <AlertCircle className="w-8 h-8 text-gray-400" />
                 </div>
+                <p className="text-gray-500 mb-2">No provider rankings available</p>
+                <p className="text-sm text-gray-400">The analysis may still be processing or there was an issue with data aggregation.</p>
               </CardContent>
             </Card>
-          ))}
+          )}
         </TabsContent>
       </Tabs>
     </div>

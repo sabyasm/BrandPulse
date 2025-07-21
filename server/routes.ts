@@ -736,7 +736,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('Gemini super aggregator failed, creating basic aggregated analysis:', geminiError);
         
         // Create basic aggregated analysis from available data
+        console.log(`Creating fallback analysis with ${competitorResults.length} competitor results and ${structuredResponses.length} structured responses`);
         const basicAggregatedAnalysis = createBasicAggregatedAnalysis(competitorResults, structuredResponses);
+        console.log(`Fallback created: ${basicAggregatedAnalysis.topBrands.length} brands, ${basicAggregatedAnalysis.aggregatedAnalysis.reportByProvider.length} providers`);
         
         await storage.updateBrandAnalysis(analysisId, {
           status: "completed",
@@ -912,8 +914,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         overallRanking: brand.overallRanking,
         providerInsights: brand.providerInsights,
         aiProvidersThink: {
-          positiveAspects: [...new Set(brand.providerInsights.flatMap(p => p.positives))],
-          negativeAspects: [...new Set(brand.providerInsights.flatMap(p => p.negatives))],
+          positiveAspects: Array.from(new Set(brand.providerInsights.flatMap(p => p.positives))),
+          negativeAspects: Array.from(new Set(brand.providerInsights.flatMap(p => p.negatives))),
           keyFeatures: [`Ranked by ${brand.count} providers`, `Average score: ${brand.averageScore.toFixed(1)}`]
         }
       }))
