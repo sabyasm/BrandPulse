@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Crown, TrendingUp, Eye, Plus, Minus } from "lucide-react";
 import type { BrandAnalysis } from "@shared/schema";
+import EnhancedCompetitorResults from "./enhanced-competitor-results";
 
 interface CompetitorResultsProps {
   analysis: BrandAnalysis;
@@ -12,6 +13,11 @@ export default function CompetitorResults({ analysis }: CompetitorResultsProps) 
   const { results } = analysis;
   
   if (!results?.competitorResults) return null;
+
+  // Check if we have enhanced aggregated analysis
+  if (results.aggregatedAnalysis) {
+    return <EnhancedCompetitorResults analysis={analysis} />;
+  }
 
   const { competitorResults } = results;
   

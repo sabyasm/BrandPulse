@@ -69,6 +69,46 @@ export const brandAnalyses = pgTable("brand_analyses", {
         reason: string;
       }>;
     }>;
+    enhancedPrompt?: string;
+    structuredResponses?: Array<{
+      prompt: string;
+      provider: string;
+      structuredData: {
+        brands: Array<{
+          name: string;
+          ranking: number;
+          positives: string[];
+          negatives: string[];
+          overallSentiment: "positive" | "neutral" | "negative";
+        }>;
+      };
+    }>;
+    aggregatedAnalysis?: {
+      reportByProvider: Array<{
+        provider: string;
+        brandRankings: Array<{
+          name: string;
+          ranking: number;
+          positives: string[];
+          negatives: string[];
+        }>;
+      }>;
+      reportByBrand: Array<{
+        brandName: string;
+        overallRanking: number;
+        providerInsights: Array<{
+          provider: string;
+          ranking: number;
+          positives: string[];
+          negatives: string[];
+        }>;
+        aiProvidersThink: {
+          positiveAspects: string[];
+          negativeAspects: string[];
+          keyFeatures: string[];
+        };
+      }>;
+    };
   }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

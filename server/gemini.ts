@@ -26,6 +26,32 @@ interface ProcessedResults {
       sentiment: 'positive' | 'negative';
     }>;
   }>;
+  aggregatedAnalysis: {
+    reportByProvider: Array<{
+      provider: string;
+      brandRankings: Array<{
+        name: string;
+        ranking: number;
+        positives: string[];
+        negatives: string[];
+      }>;
+    }>;
+    reportByBrand: Array<{
+      brandName: string;
+      overallRanking: number;
+      providerInsights: Array<{
+        provider: string;
+        ranking: number;
+        positives: string[];
+        negatives: string[];
+      }>;
+      aiProvidersThink: {
+        positiveAspects: string[];
+        negativeAspects: string[];
+        keyFeatures: string[];
+      };
+    }>;
+  };
 }
 
 export async function processCompetitorResults(
@@ -33,6 +59,19 @@ export async function processCompetitorResults(
     prompt: string;
     provider: string;
     response: string;
+  }>,
+  structuredResponses?: Array<{
+    prompt: string;
+    provider: string;
+    structuredData: {
+      brands: Array<{
+        name: string;
+        ranking: number;
+        positives: string[];
+        negatives: string[];
+        overallSentiment: "positive" | "neutral" | "negative";
+      }>;
+    };
   }>
 ): Promise<ProcessedResults> {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -40,26 +79,37 @@ export async function processCompetitorResults(
     throw new Error('GEMINI_API_KEY environment variable is not set');
   }
 
-  const prompt = `
-Analyze the following AI model responses about competitor recommendations and extract clean, structured data.
+  // Use structured data if available, otherwise fall back to raw responses
+  const dataSource = structuredResponses && structuredResponses.length > 0 ? structuredResponses : competitorResults;
+  const isStructured = structuredResponses && structuredResponses.length > 0;
 
-Raw AI responses:
-${competitorResults.map(result => `
+  const prompt = `
+Analyze the following AI model responses about competitor recommendations and create comprehensive aggregated reports.
+
+${isStructured ? 'Structured AI responses:' : 'Raw AI responses:'}
+${isStructured 
+  ? structuredResponses!.map(result => `
+Prompt: "${result.prompt}"
+AI Provider: ${result.provider}
+Structured Data: ${JSON.stringify(result.structuredData)}
+---
+`).join('\n')
+  : competitorResults.map(result => `
 Prompt: "${result.prompt}"
 AI Provider: ${result.provider}
 Response: ${result.response}
 ---
 `).join('\n')}
 
-Please provide a JSON response with the following structure:
+Create a comprehensive analysis with the following JSON structure:
 
 {
   "topRecommendedBrands": [
     {
-      "name": "Brand Name Only (e.g. 'AWS', 'Shopify', 'Salesforce')",
-      "score": number (1-10 based on how often mentioned and positive sentiment),
-      "reasoning": "Brief 1-2 sentence explanation why this brand is recommended",
-      "sentiment": "positive" or "negative"
+      "name": "Brand Name Only",
+      "score": number (1-10 based on frequency and sentiment),
+      "reasoning": "Why this brand ranks highly",
+      "sentiment": "positive" | "negative"
     }
   ],
   "resultsByPrompt": [
@@ -68,23 +118,57 @@ Please provide a JSON response with the following structure:
       "providers": [
         {
           "provider": "AI Provider Name",
-          "recommendedBrand": "Clean brand name only",
-          "reasoning": "1-2 sentences why this provider recommended this brand",
-          "sentiment": "positive" or "negative"
+          "recommendedBrand": "Brand name",
+          "reasoning": "Provider's reasoning",
+          "sentiment": "positive" | "negative"
         }
       ]
     }
-  ]
+  ],
+  "aggregatedAnalysis": {
+    "reportByProvider": [
+      {
+        "provider": "AI Provider Name",
+        "brandRankings": [
+          {
+            "name": "Brand Name",
+            "ranking": number,
+            "positives": ["positive point 1", "positive point 2"],
+            "negatives": ["negative point 1", "negative point 2"]
+          }
+        ]
+      }
+    ],
+    "reportByBrand": [
+      {
+        "brandName": "Brand Name",
+        "overallRanking": number (average across all providers),
+        "providerInsights": [
+          {
+            "provider": "AI Provider Name",
+            "ranking": number,
+            "positives": ["positive aspects from this provider"],
+            "negatives": ["negative aspects from this provider"]
+          }
+        ],
+        "aiProvidersThink": {
+          "positiveAspects": ["consolidated positive points from all providers"],
+          "negativeAspects": ["consolidated negative points from all providers"],
+          "keyFeatures": ["key features mentioned across providers"]
+        }
+      }
+    ]
+  }
 }
 
 Rules:
-1. Extract ONLY real brand/company names (AWS, Google Cloud, Shopify, etc.) - NO generic terms
-2. Combine similar brands (e.g. "AWS" and "Amazon Web Services" = "AWS")
-3. Score based on frequency and positive sentiment across all responses
-4. Keep reasoning concise and business-focused
-5. Mark sentiment as positive (+) for recommendations, negative (-) for warnings/concerns
-6. If a provider mentions multiple brands, create separate entries for each
-7. Focus on the TOP brands that appear most frequently across responses
+1. Extract ONLY real brand/company names - no generic terms
+2. Combine similar brand names (AWS = Amazon Web Services)
+3. Create detailed positive/negative lists for each brand from each provider
+4. Calculate overall rankings by averaging individual provider rankings
+5. Consolidate insights across providers in the "aiProvidersThink" section
+6. Focus on actionable business insights
+7. Ensure all data is factual and extracted from the responses
 
 Return ONLY valid JSON, no additional text.
 `;
@@ -181,7 +265,11 @@ Return ONLY valid JSON, no additional text.
           });
         }
         return acc;
-      }, [] as ProcessedResults['resultsByPrompt'])
+      }, [] as ProcessedResults['resultsByPrompt']),
+      aggregatedAnalysis: {
+        reportByProvider: [],
+        reportByBrand: []
+      }
     };
   }
 }

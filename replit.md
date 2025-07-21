@@ -57,7 +57,25 @@ Preferred communication style: Simple, everyday language.
    - Competitor recommendation tracking showing which LLM recommends which brand
 6. **Custom Prompt Support**: Users can add custom prompts for competitor analysis
 
-## Recent Changes (July 19, 2025)
+## Recent Changes (July 21, 2025)
+✓ **MAJOR UPDATE**: Enhanced competitor monitor functionality with AI-powered analysis pipeline:
+  - GPT-4.1 prompt enhancement: Original user prompts are enhanced to force structured brand ranking
+  - Structured output: AI providers return JSON with positives/negatives for each brand
+  - Gemini 2.5 Pro super aggregator: Processes all results to create comprehensive reports
+  - Two-view reporting system: By AI Provider and By Brand (similar to customer review format)
+✓ Updated schema to support enhanced competitor analysis data structure
+✓ Created new backend functions:
+  - `generateEnhancedPrompt()`: Uses GPT-4.1 to create detailed ranking prompts
+  - `callOpenRouterWithStructuredOutput()`: Requests JSON responses with positives/negatives
+  - Enhanced `processCompetitorResults()`: Creates aggregated analysis with dual report views
+✓ Built new frontend components:
+  - `EnhancedCompetitorResults`: Displays "AI Providers think" format similar to customer reviews
+  - Two-tab system: "Report by Brand" and "Report by AI Provider"
+  - Enhanced prompt display showing GPT-4.1 generated analysis instructions
+✓ Integrated conditional rendering: Uses enhanced view when aggregated analysis available
+✓ Maintained backward compatibility with existing competitor analysis for fallback
+
+## Previous Changes (July 19, 2025)
 ✓ Updated branding from "FireGEO Monitor" to "BrandGEO Monitor"
 ✓ Added competitor monitoring functionality with custom prompts
 ✓ Implemented dual-mode interface (Brand Monitor / Competitor Monitor)
@@ -75,7 +93,7 @@ Preferred communication style: Simple, everyday language.
 ✓ Integrated Gemini 2.5 API for post-processing competitor analysis results
 ✓ Created enhanced "Top Recommended Brands" section with proper brand names and reasoning
 ✓ Added "Results by Prompt" section with green + and orange - sentiment indicators
-✓ Implemented fallback handling for both Gemini processing and basic extraction methods
+✓ Implemented fallback handling for both Gemini processing and OpenRouter failuresssing and basic extraction methods
 
 ### UI Components
 - **Dashboard**: Main interface with sidebar navigation

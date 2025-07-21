@@ -79,6 +79,98 @@ function extractCompetitorRecommendations(response: string, prompt: string) {
   return recommendations;
 }
 
+async function generateEnhancedPrompt(apiKey: string, originalPrompt: string): Promise<string> {
+  console.log(`Generating enhanced prompt using GPT-4.1 for: ${originalPrompt}`);
+  
+  const enhancementPrompt = `
+You are a prompt engineering expert. Transform the following user query into a comprehensive prompt that forces AI models to:
+1. Rank order the top 5-7 brands/companies
+2. Provide specific positives and negatives for each brand
+3. Use a structured response format
+
+Original prompt: "${originalPrompt}"
+
+Create an enhanced prompt that instructs the AI to respond in this exact JSON structure:
+{
+  "brands": [
+    {
+      "name": "Brand Name",
+      "ranking": 1,
+      "positives": ["positive aspect 1", "positive aspect 2"],
+      "negatives": ["negative aspect 1", "negative aspect 2"],
+      "overallSentiment": "positive" | "neutral" | "negative"
+    }
+  ]
+}
+
+The enhanced prompt should be comprehensive, specific to the domain/industry in the original question, and ensure the AI provides detailed reasoning for rankings. Return ONLY the enhanced prompt text, no additional explanation.`;
+
+  const response = await fetch(OPENROUTER_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.BETTER_AUTH_URL || "http://localhost:5000",
+      "X-Title": "BrandGEO Monitor",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-4.1",
+      messages: [{ role: "user", content: enhancementPrompt }],
+      max_tokens: 800,
+      temperature: 0.3,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error(`Failed to generate enhanced prompt, using original`);
+    return originalPrompt;
+  }
+
+  const data = await response.json();
+  const enhancedPrompt = data.choices[0]?.message?.content;
+  console.log(`Enhanced prompt generated: ${enhancedPrompt.substring(0, 100)}...`);
+  return enhancedPrompt || originalPrompt;
+}
+
+async function callOpenRouterWithStructuredOutput(apiKey: string, model: string, prompt: string) {
+  console.log(`Making structured OpenRouter API call to model: ${model}`);
+  
+  const response = await fetch(OPENROUTER_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": process.env.BETTER_AUTH_URL || "http://localhost:5000",
+      "X-Title": "BrandGEO Monitor",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`OpenRouter structured API error: ${response.status} ${response.statusText} - ${errorText}`);
+    throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices[0]?.message?.content;
+  
+  try {
+    const parsedContent = JSON.parse(content);
+    console.log(`Structured response received from ${model}`);
+    return parsedContent;
+  } catch (parseError) {
+    console.error(`Failed to parse structured response from ${model}:`, parseError);
+    throw new Error(`Invalid JSON response from ${model}`);
+  }
+}
+
 async function callOpenRouter(apiKey: string, model: string, prompt: string) {
   console.log(`Making OpenRouter API call to model: ${model} with prompt: ${prompt.substring(0, 50)}...`);
   
@@ -430,11 +522,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     selectedProviders: string[],
     selectedPrompts: string[]
   ) {
-    console.log(`=== COMPETITOR ANALYSIS STARTED ===`);
+    console.log(`=== ENHANCED COMPETITOR ANALYSIS STARTED ===`);
     console.log(`Analysis ID: ${analysisId}`);
     console.log(`Providers: ${JSON.stringify(selectedProviders)}`);
     console.log(`Prompts: ${JSON.stringify(selectedPrompts)}`);
     console.log(`API Key present: ${!!apiKey}`);
+    
     try {
       await storage.updateBrandAnalysis(analysisId, {
         status: "in_progress",
@@ -451,31 +544,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reason: string;
         }>;
       }> = [];
+
+      const structuredResponses: Array<{
+        prompt: string;
+        provider: string;
+        structuredData: {
+          brands: Array<{
+            name: string;
+            ranking: number;
+            positives: string[];
+            negatives: string[];
+            overallSentiment: "positive" | "neutral" | "negative";
+          }>;
+        };
+      }> = [];
+
+      // Step 1: Generate enhanced prompts using GPT-4.1
+      const enhancedPrompts: { [key: string]: string } = {};
+      console.log(`Generating enhanced prompts using GPT-4.1...`);
       
+      for (const prompt of selectedPrompts) {
+        try {
+          const enhancedPrompt = await generateEnhancedPrompt(apiKey, prompt);
+          enhancedPrompts[prompt] = enhancedPrompt;
+          console.log(`Enhanced prompt generated for: ${prompt.substring(0, 50)}...`);
+        } catch (error) {
+          console.error(`Failed to enhance prompt: ${prompt}`, error);
+          enhancedPrompts[prompt] = prompt; // fallback to original
+        }
+      }
+
       const totalCalls = selectedProviders.length * selectedPrompts.length;
       let completedCalls = 0;
 
+      // Step 2: Call each provider with enhanced prompts and structured output
       for (const providerId of selectedProviders) {
         const model = AVAILABLE_MODELS.find(m => m.id === providerId);
         if (!model) continue;
 
-        for (const prompt of selectedPrompts) {
+        for (const originalPrompt of selectedPrompts) {
+          const enhancedPrompt = enhancedPrompts[originalPrompt];
+          
           try {
-            console.log(`Processing prompt "${prompt}" with provider ${model.name} (${providerId})`);
-            const response = await callOpenRouter(apiKey, providerId, prompt);
-            const recommendations = extractCompetitorRecommendations(response, prompt);
+            console.log(`Processing enhanced prompt with ${model.name} (${providerId})`);
             
-            console.log(`Extracted ${recommendations.length} recommendations from ${model.name}`);
-            
-            competitorResults.push({
-              prompt,
-              provider: model.name,
-              response,
-              recommendedBrands: recommendations,
-            });
+            // Try structured output first
+            let structuredData = null;
+            try {
+              structuredData = await callOpenRouterWithStructuredOutput(apiKey, providerId, enhancedPrompt);
+              
+              structuredResponses.push({
+                prompt: originalPrompt,
+                provider: model.name,
+                structuredData
+              });
+              
+              console.log(`Structured response received from ${model.name}`);
+            } catch (structuredError) {
+              console.log(`Structured output failed for ${model.name}, falling back to regular response`);
+              
+              // Fallback to regular response
+              const response = await callOpenRouter(apiKey, providerId, enhancedPrompt);
+              const recommendations = extractCompetitorRecommendations(response, originalPrompt);
+              
+              competitorResults.push({
+                prompt: originalPrompt,
+                provider: model.name,
+                response,
+                recommendedBrands: recommendations,
+              });
+            }
 
             completedCalls++;
-            const progress = Math.round((completedCalls / totalCalls) * 100);
+            const progress = Math.round((completedCalls / totalCalls) * 80); // Reserve 20% for final processing
             
             console.log(`Progress: ${progress}% (${completedCalls}/${totalCalls})`);
             
@@ -486,20 +627,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 competitors: [],
                 insights: [],
                 competitorResults: [...competitorResults],
+                enhancedPrompt: Object.values(enhancedPrompts)[0], // Store first enhanced prompt as example
+                structuredResponses: [...structuredResponses],
               },
             });
+            
           } catch (error) {
             console.error(`Error calling ${model.name} (${providerId}):`, error);
-            // Add a placeholder result so progress continues
+            
             competitorResults.push({
-              prompt,
+              prompt: originalPrompt,
               provider: model.name,
               response: "Error: Failed to get response from this provider",
               recommendedBrands: [],
             });
             
             completedCalls++;
-            const progress = Math.round((completedCalls / totalCalls) * 100);
+            const progress = Math.round((completedCalls / totalCalls) * 80);
             
             await storage.updateBrandAnalysis(analysisId, {
               progress,
@@ -508,14 +652,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 competitors: [],
                 insights: [],
                 competitorResults: [...competitorResults],
+                enhancedPrompt: Object.values(enhancedPrompts)[0],
+                structuredResponses: [...structuredResponses],
               },
             });
           }
         }
       }
 
-      // Process results with Gemini for clean brand extraction and formatting
-      console.log(`Processing results with Gemini for clean brand extraction...`);
+      // Step 3: Process results with Gemini 2.5 Pro as super aggregator
+      console.log(`Processing results with Gemini 2.5 Pro super aggregator...`);
+      await storage.updateBrandAnalysis(analysisId, { progress: 85 });
       
       try {
         const processedResults = await processCompetitorResults(
@@ -523,20 +670,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             prompt: result.prompt,
             provider: result.provider,
             response: result.response
-          }))
+          })),
+          structuredResponses
         );
 
-        console.log(`Gemini processing completed. Found ${processedResults.topRecommendedBrands.length} top brands`);
+        console.log(`Gemini super aggregator completed. Found ${processedResults.topRecommendedBrands.length} top brands`);
 
-        // Update the competitor results with processed data
-        const enhancedCompetitorResults = competitorResults.map(result => ({
-          ...result,
-          processedBrands: processedResults.resultsByPrompt
-            .find(p => p.prompt === result.prompt)
-            ?.providers.filter(prov => prov.provider === result.provider) || []
-        }));
-
-        // Complete analysis with processed results
+        // Complete analysis with enhanced structured results
         await storage.updateBrandAnalysis(analysisId, {
           status: "completed",
           progress: 100,
@@ -546,27 +686,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
               name: brand.name,
               mentions: brand.score,
               totalPrompts: selectedPrompts.length,
-              averagePosition: brand.score / 2, // Convert score to position estimate
+              averagePosition: 11 - brand.score, // Convert score to position (higher score = better position)
             })),
             insights: [
               {
                 type: "opportunity" as const,
-                title: "Top Recommended Brands",
-                description: `Analysis shows ${processedResults.topRecommendedBrands[0]?.name || 'leading brands'} as the most frequently recommended across AI models.`,
+                title: "AI Provider Consensus",
+                description: `${processedResults.topRecommendedBrands[0]?.name || 'Leading brands'} shows strong consensus across AI providers with enhanced analysis.`,
               },
               {
-                type: "gap" as const,
-                title: "Provider Consistency",
-                description: `Different AI models show varying preferences - consider this when targeting different AI-assisted decision makers.`,
+                type: "strength" as const,
+                title: "Structured Analysis Complete",
+                description: `Enhanced prompts and structured output provide deeper insights into brand positioning and competitive advantages.`,
               },
             ],
-            competitorResults: enhancedCompetitorResults,
+            competitorResults,
+            enhancedPrompt: Object.values(enhancedPrompts)[0],
+            structuredResponses,
+            aggregatedAnalysis: processedResults.aggregatedAnalysis,
           },
         });
+
       } catch (geminiError) {
-        console.error('Gemini processing failed, using basic results:', geminiError);
+        console.error('Gemini super aggregator failed, using basic results:', geminiError);
         
-        // Fallback to basic processing if Gemini fails
         await storage.updateBrandAnalysis(analysisId, {
           status: "completed",
           progress: 100,
@@ -577,16 +720,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               {
                 type: "gap" as const,
                 title: "Processing Issue",
-                description: "Results processed with basic extraction. Enhanced analysis temporarily unavailable.",
+                description: "Enhanced analysis attempted but super aggregator unavailable. Results processed with structured data where available.",
               },
             ],
             competitorResults,
+            enhancedPrompt: Object.values(enhancedPrompts)[0],
+            structuredResponses,
           },
         });
       }
 
     } catch (error) {
-      console.error("Competitor analysis processing error:", error);
+      console.error("Enhanced competitor analysis processing error:", error);
       await storage.updateBrandAnalysis(analysisId, {
         status: "failed",
       });
