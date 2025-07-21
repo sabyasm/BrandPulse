@@ -737,6 +737,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create basic aggregated analysis from available data
         console.log(`Creating fallback analysis with ${competitorResults.length} competitor results and ${structuredResponses.length} structured responses`);
+        console.log(`Competitor results data:`, competitorResults.map(r => ({ provider: r.provider, brands: r.recommendedBrands?.length || 0 })));
+        console.log(`Structured responses data:`, structuredResponses.map(r => ({ provider: r.provider, brands: r.structuredData?.brands?.length || 0 })));
+        
         const basicAggregatedAnalysis = createBasicAggregatedAnalysis(competitorResults, structuredResponses);
         console.log(`Fallback created: ${basicAggregatedAnalysis.topBrands.length} brands, ${basicAggregatedAnalysis.aggregatedAnalysis.reportByProvider.length} providers`);
         
@@ -885,25 +888,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       negatives: string[];
     }>>();
 
-    // Collect provider data
-    [...structuredResponses, ...competitorResults].forEach(response => {
+    // Process structured responses first
+    structuredResponses.forEach(response => {
       const providerName = response.provider;
       if (!providerMap.has(providerName)) {
         providerMap.set(providerName, []);
       }
 
-      if ('structuredData' in response) {
-        // Structured response
+      if (response.structuredData?.brands) {
         response.structuredData.brands.forEach(brand => {
           providerMap.get(providerName)!.push({
             name: brand.name,
             ranking: brand.ranking,
-            positives: brand.positives,
-            negatives: brand.negatives
+            positives: brand.positives || [],
+            negatives: brand.negatives || []
           });
         });
-      } else {
-        // Unstructured response
+      }
+    });
+
+    // Process unstructured responses
+    competitorResults.forEach(response => {
+      const providerName = response.provider;
+      if (!providerMap.has(providerName)) {
+        providerMap.set(providerName, []);
+      }
+
+      if (response.recommendedBrands?.length > 0) {
         response.recommendedBrands.forEach(brand => {
           providerMap.get(providerName)!.push({
             name: brand.name,
