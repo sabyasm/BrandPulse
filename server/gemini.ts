@@ -326,8 +326,15 @@ Return ONLY valid JSON, no additional text.
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
       
-      // Create reportByBrand with AI providers format
-      Array.from(allBrands.values()).forEach(brand => {
+      // Create reportByBrand with AI providers format and proper rankings
+      const sortedBrands = Array.from(allBrands.values())
+        .map(brand => ({
+          ...brand,
+          averageScore: brand.score / brand.count
+        }))
+        .sort((a, b) => b.averageScore - a.averageScore);
+
+      sortedBrands.forEach((brand, index) => {
         const providerInsights = structuredResponses
           .filter(resp => resp.structuredData?.brands?.some(b => b.name.toLowerCase() === brand.name.toLowerCase()))
           .map(resp => {
@@ -343,12 +350,12 @@ Return ONLY valid JSON, no additional text.
         if (providerInsights.length > 0) {
           reportByBrand.push({
             brandName: brand.name,
-            overallRanking: Math.round(brand.score / brand.count),
+            overallRanking: index + 1, // Proper ranking: 1st, 2nd, 3rd, etc.
             providerInsights,
             aiProvidersThink: {
               positiveAspects: Array.from(new Set(providerInsights.flatMap(p => p.positives))),
               negativeAspects: Array.from(new Set(providerInsights.flatMap(p => p.negatives))),
-              keyFeatures: [`Ranked by ${brand.count} provider(s)`, `Average score: ${(brand.score / brand.count).toFixed(1)}`]
+              keyFeatures: [`Evaluated by ${brand.count} provider(s)`]
             }
           });
         }

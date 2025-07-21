@@ -107,10 +107,10 @@ export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetit
                     <h4 className="text-lg font-medium text-gray-900 mb-4">AI Providers say</h4>
                     <p className="text-gray-700 mb-4">
                       {brandReport.aiProvidersThink.positiveAspects.length > 0 
-                        ? `AI providers appreciate ${brandReport.aiProvidersThink.positiveAspects.slice(0, 2).join(' and ')}.`
+                        ? `${brandReport.aiProvidersThink.positiveAspects.slice(0, 2).join(' and ')}.`
                         : ''
                       } {brandReport.aiProvidersThink.negativeAspects.length > 0 
-                        ? `However, they note concerns about ${brandReport.aiProvidersThink.negativeAspects.slice(0, 2).join(' and ')}.`
+                        ? `However, concerns noted about ${brandReport.aiProvidersThink.negativeAspects.slice(0, 2).join(' and ')}.`
                         : ''
                       } {brandReport.providerInsights.length > 1 
                         ? `Multiple providers evaluated this brand with varying rankings.`
