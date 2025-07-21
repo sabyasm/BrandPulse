@@ -163,9 +163,13 @@ Create a comprehensive analysis with the following JSON structure:
 
 Rules:
 1. Extract ONLY real brand/company names - no generic terms
-2. Combine similar brand names (AWS = Amazon Web Services)
+2. **CRITICAL: Deduplicate brand names** - Different AI providers may return the same brand with different names:
+   - "RBC Royal Bank" and "Royal Bank of Canada (RBC)" = Same bank, consolidate as "RBC (Royal Bank of Canada)"  
+   - "Amazon Web Services" and "AWS" = Same service, consolidate as "AWS (Amazon Web Services)"
+   - "Google Cloud Platform" and "GCP" = Same platform, consolidate as "Google Cloud Platform (GCP)"
+   - When consolidating, use the most complete name with common abbreviation in parentheses
 3. Create detailed positive/negative lists for each brand from each provider
-4. Calculate overall rankings by averaging individual provider rankings
+4. Calculate overall rankings by averaging individual provider rankings AFTER deduplication
 5. Consolidate insights across providers in the "aiProvidersThink" section
 6. Focus on actionable business insights
 7. Ensure all data is factual and extracted from the responses
