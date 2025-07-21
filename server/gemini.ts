@@ -213,12 +213,58 @@ Return ONLY valid JSON, no additional text.
     }
 
     // Clean the response to extract JSON
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    let cleanedContent = content.trim();
+    
+    // Remove code block markers if present
+    if (cleanedContent.startsWith('```json')) {
+      cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    } else if (cleanedContent.startsWith('```')) {
+      cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
+    }
+    
+    // Try to find and extract the main JSON object
+    const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No valid JSON found in Gemini response');
     }
 
-    const parsedResult = JSON.parse(jsonMatch[0]) as ProcessedResults;
+    let jsonString = jsonMatch[0];
+    
+    // Fix common JSON issues
+    let parsedResult: ProcessedResults;
+    
+    try {
+      // First attempt: parse as-is
+      parsedResult = JSON.parse(jsonString) as ProcessedResults;
+      console.log('Gemini JSON parsed successfully');
+    } catch (firstError) {
+      console.log('First JSON parse failed, attempting to fix common issues...');
+      
+      // Try to fix common JSON issues
+      // Remove trailing commas
+      jsonString = jsonString.replace(/,(\s*[}\]])/g, '$1');
+      
+      // Fix incomplete strings by finding unmatched quotes
+      const lines = jsonString.split('\n');
+      let fixedLines = [];
+      for (let line of lines) {
+        // If line has unmatched quotes, try to close them
+        const quotes = (line.match(/"/g) || []).length;
+        if (quotes % 2 !== 0 && !line.trim().endsWith(',') && !line.trim().endsWith('}') && !line.trim().endsWith(']')) {
+          line = line.trim() + '"';
+        }
+        fixedLines.push(line);
+      }
+      jsonString = fixedLines.join('\n');
+      
+      try {
+        parsedResult = JSON.parse(jsonString) as ProcessedResults;
+        console.log('Gemini JSON parsed successfully after fixes');
+      } catch (secondError: any) {
+        console.error('Failed to parse JSON even after fixes:', secondError);
+        throw new Error(`Gemini returned malformed JSON: ${secondError.message}`);
+      }
+    }
     
     // Validate the structure
     if (!parsedResult.topRecommendedBrands || !parsedResult.resultsByPrompt) {

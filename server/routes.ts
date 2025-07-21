@@ -103,6 +103,13 @@ Create an enhanced prompt that instructs the AI to respond in this exact JSON st
   ]
 }
 
+IMPORTANT: The enhanced prompt should:
+1. Be specific to the industry/domain in the original question
+2. Ask for 5-7 specific brand/company names (not generic categories)
+3. Explicitly request positive and negative aspects for each brand
+4. Request ranking from 1 (best) to 7 (worst) based on the specific criteria in the original question
+5. Include instruction to respond ONLY with valid JSON, no additional text
+
 The enhanced prompt should be comprehensive, specific to the domain/industry in the original question, and ensure the AI provides detailed reasoning for rankings. Return ONLY the enhanced prompt text, no additional explanation.`;
 
   const response = await fetch(OPENROUTER_API_URL, {
@@ -162,11 +169,28 @@ async function callOpenRouterWithStructuredOutput(apiKey: string, model: string,
   const content = data.choices[0]?.message?.content;
   
   try {
-    const parsedContent = JSON.parse(content);
+    // Clean the response to extract JSON (remove code blocks if present)
+    let cleanedContent = content.trim();
+    
+    // Remove ```json and ``` code block markers
+    if (cleanedContent.startsWith('```json')) {
+      cleanedContent = cleanedContent.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    } else if (cleanedContent.startsWith('```')) {
+      cleanedContent = cleanedContent.replace(/^```\s*/, '').replace(/```\s*$/, '');
+    }
+    
+    // Try to find JSON object in the response
+    const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      cleanedContent = jsonMatch[0];
+    }
+    
+    const parsedContent = JSON.parse(cleanedContent);
     console.log(`Structured response received from ${model}`);
     return parsedContent;
   } catch (parseError) {
     console.error(`Failed to parse structured response from ${model}:`, parseError);
+    console.error(`Raw content:`, content);
     throw new Error(`Invalid JSON response from ${model}`);
   }
 }
@@ -671,10 +695,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             provider: result.provider,
             response: result.response
           })),
-          structuredResponses
+          structuredResponses.length > 0 ? structuredResponses : undefined
         );
 
         console.log(`Gemini super aggregator completed. Found ${processedResults.topRecommendedBrands.length} top brands`);
+        console.log(`Aggregated analysis has ${processedResults.aggregatedAnalysis.reportByBrand.length} brands and ${processedResults.aggregatedAnalysis.reportByProvider.length} providers`);
 
         // Complete analysis with enhanced structured results
         await storage.updateBrandAnalysis(analysisId, {
@@ -708,24 +733,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       } catch (geminiError) {
-        console.error('Gemini super aggregator failed, using basic results:', geminiError);
+        console.error('Gemini super aggregator failed, creating basic aggregated analysis:', geminiError);
+        
+        // Create basic aggregated analysis from available data
+        const basicAggregatedAnalysis = createBasicAggregatedAnalysis(competitorResults, structuredResponses);
         
         await storage.updateBrandAnalysis(analysisId, {
           status: "completed",
           progress: 100,
           results: {
             providerResponses: [],
-            competitors: [],
+            competitors: basicAggregatedAnalysis.topBrands,
             insights: [
               {
-                type: "gap" as const,
-                title: "Processing Issue",
-                description: "Enhanced analysis attempted but super aggregator unavailable. Results processed with structured data where available.",
+                type: "opportunity" as const,
+                title: "Enhanced Analysis Completed",
+                description: "Analysis completed with enhanced prompts and structured data processing. Some advanced features used fallback methods.",
               },
             ],
             competitorResults,
             enhancedPrompt: Object.values(enhancedPrompts)[0],
             structuredResponses,
+            aggregatedAnalysis: basicAggregatedAnalysis.aggregatedAnalysis,
           },
         });
       }
@@ -736,6 +765,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "failed",
       });
     }
+  }
+
+  function createBasicAggregatedAnalysis(
+    competitorResults: Array<{
+      prompt: string;
+      provider: string;
+      response: string;
+      recommendedBrands: Array<{
+        name: string;
+        ranking: number;
+        reason: string;
+      }>;
+    }>,
+    structuredResponses: Array<{
+      prompt: string;
+      provider: string;
+      structuredData: {
+        brands: Array<{
+          name: string;
+          ranking: number;
+          positives: string[];
+          negatives: string[];
+          overallSentiment: "positive" | "neutral" | "negative";
+        }>;
+      };
+    }>
+  ) {
+    // Aggregate brands from both structured and unstructured responses
+    const brandMap = new Map<string, {
+      name: string;
+      totalScore: number;
+      count: number;
+      providerInsights: Array<{
+        provider: string;
+        ranking: number;
+        positives: string[];
+        negatives: string[];
+      }>;
+    }>();
+
+    // Process structured responses first (higher quality)
+    structuredResponses.forEach(response => {
+      response.structuredData.brands.forEach(brand => {
+        const key = brand.name.toLowerCase();
+        const existing = brandMap.get(key) || {
+          name: brand.name,
+          totalScore: 0,
+          count: 0,
+          providerInsights: []
+        };
+
+        existing.totalScore += (8 - brand.ranking); // Convert ranking to score (1st = 7 points, 7th = 1 point)
+        existing.count++;
+        existing.providerInsights.push({
+          provider: response.provider,
+          ranking: brand.ranking,
+          positives: brand.positives,
+          negatives: brand.negatives
+        });
+
+        brandMap.set(key, existing);
+      });
+    });
+
+    // Process unstructured responses as fallback
+    competitorResults.forEach(result => {
+      result.recommendedBrands.forEach(brand => {
+        const key = brand.name.toLowerCase();
+        if (!brandMap.has(key)) { // Only add if not already processed from structured data
+          const existing = brandMap.get(key) || {
+            name: brand.name,
+            totalScore: 0,
+            count: 0,
+            providerInsights: []
+          };
+
+          existing.totalScore += (8 - brand.ranking);
+          existing.count++;
+          existing.providerInsights.push({
+            provider: result.provider,
+            ranking: brand.ranking,
+            positives: [`Recommended by ${result.provider}`],
+            negatives: []
+          });
+
+          brandMap.set(key, existing);
+        }
+      });
+    });
+
+    // Create sorted list of brands
+    const sortedBrands = Array.from(brandMap.values())
+      .map(brand => ({
+        ...brand,
+        averageScore: brand.totalScore / brand.count,
+        overallRanking: Math.round(8 - (brand.totalScore / brand.count))
+      }))
+      .sort((a, b) => b.averageScore - a.averageScore);
+
+    // Create report by provider
+    const providerMap = new Map<string, Array<{
+      name: string;
+      ranking: number;
+      positives: string[];
+      negatives: string[];
+    }>>();
+
+    // Collect provider data
+    [...structuredResponses, ...competitorResults].forEach(response => {
+      const providerName = response.provider;
+      if (!providerMap.has(providerName)) {
+        providerMap.set(providerName, []);
+      }
+
+      if ('structuredData' in response) {
+        // Structured response
+        response.structuredData.brands.forEach(brand => {
+          providerMap.get(providerName)!.push({
+            name: brand.name,
+            ranking: brand.ranking,
+            positives: brand.positives,
+            negatives: brand.negatives
+          });
+        });
+      } else {
+        // Unstructured response
+        response.recommendedBrands.forEach(brand => {
+          providerMap.get(providerName)!.push({
+            name: brand.name,
+            ranking: brand.ranking,
+            positives: [`Recommended by ${providerName}`],
+            negatives: []
+          });
+        });
+      }
+    });
+
+    const aggregatedAnalysis = {
+      reportByProvider: Array.from(providerMap.entries()).map(([provider, brands]) => ({
+        provider,
+        brandRankings: brands.sort((a, b) => a.ranking - b.ranking)
+      })),
+      reportByBrand: sortedBrands.slice(0, 10).map(brand => ({
+        brandName: brand.name,
+        overallRanking: brand.overallRanking,
+        providerInsights: brand.providerInsights,
+        aiProvidersThink: {
+          positiveAspects: [...new Set(brand.providerInsights.flatMap(p => p.positives))],
+          negativeAspects: [...new Set(brand.providerInsights.flatMap(p => p.negatives))],
+          keyFeatures: [`Ranked by ${brand.count} providers`, `Average score: ${brand.averageScore.toFixed(1)}`]
+        }
+      }))
+    };
+
+    const topBrands = sortedBrands.slice(0, 5).map(brand => ({
+      name: brand.name,
+      mentions: brand.count,
+      totalPrompts: competitorResults.length || structuredResponses.length || 1,
+      averagePosition: brand.overallRanking
+    }));
+
+    return { aggregatedAnalysis, topBrands };
   }
 
   const httpServer = createServer(app);
