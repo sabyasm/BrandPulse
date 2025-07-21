@@ -794,6 +794,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
     }>
   ) {
+    console.log(`=== FALLBACK ANALYSIS DEBUG ===`);
+    console.log(`Structured responses count: ${structuredResponses.length}`);
+    console.log(`Competitor results count: ${competitorResults.length}`);
+    
+    structuredResponses.forEach((response, index) => {
+      console.log(`Structured response ${index}: provider=${response.provider}, brands=${response.structuredData?.brands?.length || 0}`);
+      if (response.structuredData?.brands) {
+        console.log(`Brands in response ${index}:`, response.structuredData.brands.map(b => b.name));
+      }
+    });
+
     // Aggregate brands from both structured and unstructured responses
     const brandMap = new Map<string, {
       name: string;
@@ -927,6 +938,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       totalPrompts: competitorResults.length || structuredResponses.length || 1,
       averagePosition: brand.overallRanking
     }));
+
+    console.log(`=== FALLBACK RESULTS ===`);
+    console.log(`Brands found: ${sortedBrands.length}`);
+    console.log(`Top brands: ${topBrands.length}`);
+    console.log(`Providers in report: ${Array.from(providerMap.keys()).length}`);
+    console.log(`Sorted brands:`, sortedBrands.map(b => b.name));
 
     return { aggregatedAnalysis, topBrands };
   }
