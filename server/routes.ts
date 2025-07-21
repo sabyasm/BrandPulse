@@ -734,14 +734,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       } catch (geminiError) {
         console.error('Gemini super aggregator failed, creating basic aggregated analysis:', geminiError);
+        console.log('DEBUG: Fallback catch block executing...');
         
         // Create basic aggregated analysis from available data
         console.log(`Creating fallback analysis with ${competitorResults.length} competitor results and ${structuredResponses.length} structured responses`);
         console.log(`Competitor results data:`, competitorResults.map(r => ({ provider: r.provider, brands: r.recommendedBrands?.length || 0 })));
         console.log(`Structured responses data:`, structuredResponses.map(r => ({ provider: r.provider, brands: r.structuredData?.brands?.length || 0 })));
         
-        const basicAggregatedAnalysis = createBasicAggregatedAnalysis(competitorResults, structuredResponses);
-        console.log(`Fallback created: ${basicAggregatedAnalysis.topBrands.length} brands, ${basicAggregatedAnalysis.aggregatedAnalysis.reportByProvider.length} providers`);
+        console.log('DEBUG: About to call createBasicAggregatedAnalysis...');
+        let basicAggregatedAnalysis;
+        try {
+          basicAggregatedAnalysis = createBasicAggregatedAnalysis(competitorResults, structuredResponses);
+          console.log(`Fallback created: ${basicAggregatedAnalysis.topBrands.length} brands, ${basicAggregatedAnalysis.aggregatedAnalysis.reportByProvider.length} providers`);
+        } catch (fallbackError) {
+          console.error('DEBUG: Error in createBasicAggregatedAnalysis:', fallbackError);
+          // Create empty fallback if function fails
+          basicAggregatedAnalysis = {
+            topBrands: [],
+            aggregatedAnalysis: { reportByProvider: [], reportByBrand: [] }
+          };
+        }
         
         await storage.updateBrandAnalysis(analysisId, {
           status: "completed",
