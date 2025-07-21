@@ -730,51 +730,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
             enhancedPrompt: Object.values(enhancedPrompts)[0],
             structuredResponses,
             aggregatedAnalysis: processedResults.aggregatedAnalysis,
+            aiRecommendation: processedResults.aiRecommendation,
           },
         });
 
       } catch (geminiError) {
-        console.error('Gemini super aggregator failed, creating basic aggregated analysis:', geminiError);
-        console.log('DEBUG: Fallback catch block executing...');
+        console.error('Error processing competitor results with Gemini:', geminiError);
+        console.log('Using structured responses for fallback aggregation');
         
-        // Create basic aggregated analysis from available data
-        console.log(`Creating fallback analysis with ${competitorResults.length} competitor results and ${structuredResponses.length} structured responses`);
-        console.log(`Competitor results data:`, competitorResults.map(r => ({ provider: r.provider, brands: r.recommendedBrands?.length || 0 })));
-        console.log(`Structured responses data:`, structuredResponses.map(r => ({ provider: r.provider, brands: r.structuredData?.brands?.length || 0 })));
-        
-        console.log('DEBUG: About to call createBasicAggregatedAnalysis...');
-        let basicAggregatedAnalysis;
+        // Use processCompetitorResults fallback which includes AI recommendation
         try {
-          basicAggregatedAnalysis = createBasicAggregatedAnalysis(competitorResults, structuredResponses);
-          console.log(`Fallback created: ${basicAggregatedAnalysis.topBrands.length} brands, ${basicAggregatedAnalysis.aggregatedAnalysis.reportByProvider.length} providers`);
+          const fallbackResults = await processCompetitorResults(
+            competitorResults.map(result => ({
+              prompt: result.prompt,
+              provider: result.provider,
+              response: result.response
+            })),
+            structuredResponses.length > 0 ? structuredResponses : undefined
+          );
+
+          console.log(`Gemini super aggregator completed. Found ${fallbackResults.topRecommendedBrands.length} top brands`);
+          console.log(`Aggregated analysis has ${fallbackResults.aggregatedAnalysis.reportByBrand.length} brands and ${fallbackResults.aggregatedAnalysis.reportByProvider.length} providers`);
+
+          await storage.updateBrandAnalysis(analysisId, {
+            status: "completed",
+            progress: 100,
+            results: {
+              providerResponses: [],
+              competitors: fallbackResults.topRecommendedBrands.map(brand => ({
+                name: brand.name,
+                mentions: brand.score,
+                totalPrompts: selectedPrompts.length,
+                averagePosition: 11 - brand.score,
+              })),
+              insights: [
+                {
+                  type: "opportunity" as const,
+                  title: "Enhanced Analysis Completed",
+                  description: "Analysis completed with enhanced prompts and structured data processing using fallback aggregation.",
+                },
+              ],
+              competitorResults,
+              enhancedPrompt: Object.values(enhancedPrompts)[0],
+              structuredResponses,
+              aggregatedAnalysis: fallbackResults.aggregatedAnalysis,
+              aiRecommendation: fallbackResults.aiRecommendation,
+            },
+          });
         } catch (fallbackError) {
-          console.error('DEBUG: Error in createBasicAggregatedAnalysis:', fallbackError);
-          // Create empty fallback if function fails
-          basicAggregatedAnalysis = {
-            topBrands: [],
-            aggregatedAnalysis: { reportByProvider: [], reportByBrand: [] }
-          };
+          console.error('Fallback processing also failed:', fallbackError);
+          await storage.updateBrandAnalysis(analysisId, {
+            status: "completed",
+            progress: 100,
+            results: {
+              providerResponses: [],
+              competitors: [],
+              insights: [
+                {
+                  type: "gap" as const,
+                  title: "Processing Error",
+                  description: "Unable to complete analysis due to processing errors.",
+                },
+              ],
+              competitorResults,
+              enhancedPrompt: Object.values(enhancedPrompts)[0],
+              structuredResponses,
+            },
+          });
         }
-        
-        await storage.updateBrandAnalysis(analysisId, {
-          status: "completed",
-          progress: 100,
-          results: {
-            providerResponses: [],
-            competitors: basicAggregatedAnalysis.topBrands,
-            insights: [
-              {
-                type: "opportunity" as const,
-                title: "Enhanced Analysis Completed",
-                description: "Analysis completed with enhanced prompts and structured data processing. Some advanced features used fallback methods.",
-              },
-            ],
-            competitorResults,
-            enhancedPrompt: Object.values(enhancedPrompts)[0],
-            structuredResponses,
-            aggregatedAnalysis: basicAggregatedAnalysis.aggregatedAnalysis,
-          },
-        });
       }
 
     } catch (error) {

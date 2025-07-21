@@ -449,16 +449,22 @@ Return ONLY valid JSON, no additional text.
       const originalPrompt = structuredResponses?.[0]?.prompt || '';
       let aiRecommendation = '';
       
+      console.log('Generating AI recommendation for top brand:', topBrand, 'with prompt:', originalPrompt);
+      
       if (topBrand && originalPrompt) {
         try {
           aiRecommendation = await generateAIRecommendation(topBrand, originalPrompt);
+          console.log('AI recommendation generated successfully:', aiRecommendation);
         } catch (error) {
           console.error('Failed to generate AI recommendation in fallback:', error);
           aiRecommendation = `Based on comprehensive analysis, ${topBrand} emerges as the top recommendation.`;
+          console.log('Using fallback AI recommendation:', aiRecommendation);
         }
+      } else {
+        console.log('No top brand or original prompt found for AI recommendation');
       }
 
-      return {
+      const result = {
         topRecommendedBrands,
         resultsByPrompt: structuredResponses.map(response => ({
           prompt: response.prompt,
@@ -475,6 +481,9 @@ Return ONLY valid JSON, no additional text.
         },
         aiRecommendation
       };
+      
+      console.log('Returning fallback result with AI recommendation:', result.aiRecommendation);
+      return result;
     }
     
     // Basic fallback for unstructured data
