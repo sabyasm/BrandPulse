@@ -10,6 +10,70 @@ interface GeminiResponse {
   }>;
 }
 
+export async function generateAIRecommendation(topBrand: string, originalPrompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return `Based on comprehensive analysis, ${topBrand} emerges as the top recommendation.`;
+  }
+
+  const prompt = `Based on AI analysis across multiple providers, "${topBrand}" ranked as the #1 recommendation for: "${originalPrompt}"
+
+Create a single, compelling one-line recommendation (max 25 words) that explains why ${topBrand} is the best choice. Make it actionable and confident.
+
+Examples:
+- "Choose Salesforce CRM for its powerful automation and seamless integration capabilities that scale with growing startups."
+- "Select RBC for newcomers due to their comprehensive immigration banking packages and multilingual support services."
+
+Your one-liner for ${topBrand}:`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 100,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Failed to generate AI recommendation');
+      return `Based on comprehensive analysis, ${topBrand} emerges as the top recommendation.`;
+    }
+
+    const data = await response.json() as GeminiResponse;
+    const recommendation = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (recommendation) {
+      console.log('AI recommendation generated successfully');
+      return recommendation;
+    }
+    
+    return `Based on comprehensive analysis, ${topBrand} emerges as the top recommendation.`;
+  } catch (error) {
+    console.error('Error generating AI recommendation:', error);
+    return `Based on comprehensive analysis, ${topBrand} emerges as the top recommendation.`;
+  }
+}
+
 interface ProcessedResults {
   topRecommendedBrands: Array<{
     name: string;
@@ -52,6 +116,7 @@ interface ProcessedResults {
       };
     }>;
   };
+  aiRecommendation?: string;
 }
 
 export async function processCompetitorResults(
@@ -275,6 +340,20 @@ Return ONLY valid JSON, no additional text.
       throw new Error('Invalid response structure from Gemini');
     }
 
+    // Generate AI recommendation for the top brand
+    const topBrand = parsedResult.topRecommendedBrands[0]?.name;
+    const originalPrompt = structuredResponses?.[0]?.prompt || competitorResults?.[0]?.prompt || '';
+    
+    if (topBrand && originalPrompt) {
+      try {
+        const aiRecommendation = await generateAIRecommendation(topBrand, originalPrompt);
+        parsedResult.aiRecommendation = aiRecommendation;
+      } catch (error) {
+        console.error('Failed to generate AI recommendation:', error);
+        parsedResult.aiRecommendation = `Based on comprehensive analysis, ${topBrand} emerges as the top recommendation.`;
+      }
+    }
+
     return parsedResult;
   } catch (error) {
     console.error('Error processing competitor results with Gemini:', error);
@@ -365,6 +444,20 @@ Return ONLY valid JSON, no additional text.
         }
       });
       
+      // Generate AI recommendation for the top brand in fallback
+      const topBrand = topRecommendedBrands[0]?.name;
+      const originalPrompt = structuredResponses?.[0]?.prompt || '';
+      let aiRecommendation = '';
+      
+      if (topBrand && originalPrompt) {
+        try {
+          aiRecommendation = await generateAIRecommendation(topBrand, originalPrompt);
+        } catch (error) {
+          console.error('Failed to generate AI recommendation in fallback:', error);
+          aiRecommendation = `Based on comprehensive analysis, ${topBrand} emerges as the top recommendation.`;
+        }
+      }
+
       return {
         topRecommendedBrands,
         resultsByPrompt: structuredResponses.map(response => ({
@@ -379,24 +472,41 @@ Return ONLY valid JSON, no additional text.
         aggregatedAnalysis: {
           reportByProvider,
           reportByBrand: reportByBrand.slice(0, 10)
-        }
+        },
+        aiRecommendation
       };
     }
     
     // Basic fallback for unstructured data
+    const basicTopBrands = competitorResults
+      .map(result => {
+        const brandMatch = result.response.match(/\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b/g);
+        const brand = brandMatch?.[0] || 'Unknown Brand';
+        return {
+          name: brand,
+          score: 5,
+          reasoning: 'Mentioned in AI response',
+          sentiment: 'positive' as const
+        };
+      })
+      .slice(0, 5);
+
+    // Generate basic AI recommendation
+    const basicTopBrand = basicTopBrands[0]?.name;
+    const basicOriginalPrompt = competitorResults?.[0]?.prompt || '';
+    let basicAiRecommendation = '';
+    
+    if (basicTopBrand && basicOriginalPrompt) {
+      try {
+        basicAiRecommendation = await generateAIRecommendation(basicTopBrand, basicOriginalPrompt);
+      } catch (error) {
+        console.error('Failed to generate basic AI recommendation:', error);
+        basicAiRecommendation = `Based on analysis, ${basicTopBrand} emerges as a strong recommendation.`;
+      }
+    }
+
     return {
-      topRecommendedBrands: competitorResults
-        .map(result => {
-          const brandMatch = result.response.match(/\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b/g);
-          const brand = brandMatch?.[0] || 'Unknown Brand';
-          return {
-            name: brand,
-            score: 5,
-            reasoning: 'Mentioned in AI response',
-            sentiment: 'positive' as const
-          };
-        })
-        .slice(0, 5),
+      topRecommendedBrands: basicTopBrands,
       resultsByPrompt: competitorResults.reduce((acc, result) => {
         const existingPrompt = acc.find(p => p.prompt === result.prompt);
         const brandMatch = result.response.match(/\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b/g);
@@ -422,7 +532,8 @@ Return ONLY valid JSON, no additional text.
       aggregatedAnalysis: {
         reportByProvider: [],
         reportByBrand: []
-      }
+      },
+      aiRecommendation: basicAiRecommendation
     };
   }
 }

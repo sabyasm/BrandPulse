@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Crown, TrendingUp, Users, Plus, Minus, CheckCircle, XCircle, Lightbulb, Star, AlertCircle, Copy, ChevronDown } from "lucide-react";
+import { Crown, TrendingUp, Users, Plus, Minus, CheckCircle, XCircle, Lightbulb, Star, AlertCircle, Copy, ChevronDown, Award } from "lucide-react";
 import type { BrandAnalysis } from "@shared/schema";
 import { useState } from "react";
 
@@ -58,6 +58,30 @@ export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetit
                   <Copy className="w-4 h-4" />
                 </button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Recommendation Card */}
+      {results.aiRecommendation && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Award className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">AI Recommendation</CardTitle>
+                <p className="text-sm text-gray-600">Top choice based on comprehensive analysis</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-green-50 border-l-4 border-green-500 rounded-r-lg p-4">
+              <p className="text-green-900 font-medium leading-relaxed">
+                {results.aiRecommendation}
+              </p>
             </div>
           </CardContent>
         </Card>

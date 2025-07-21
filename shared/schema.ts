@@ -109,6 +109,7 @@ export const brandAnalyses = pgTable("brand_analyses", {
         };
       }>;
     };
+    aiRecommendation?: string;
   }>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
