@@ -275,11 +275,107 @@ Return ONLY valid JSON, no additional text.
   } catch (error) {
     console.error('Error processing competitor results with Gemini:', error);
     
-    // Fallback: return a basic structure to prevent UI errors
+    // Fallback: Use structured responses if available, otherwise basic extraction
+    if (structuredResponses && structuredResponses.length > 0) {
+      console.log('Using structured responses for fallback aggregation');
+      
+      // Extract all brands from structured responses
+      const allBrands = new Map<string, { name: string; score: number; count: number; sentiment: string[] }>();
+      const reportByProvider: any[] = [];
+      const reportByBrand: any[] = [];
+      
+      // Process structured responses
+      structuredResponses.forEach(response => {
+        if (response.structuredData?.brands) {
+          // Add to reportByProvider
+          reportByProvider.push({
+            provider: response.provider,
+            brandRankings: response.structuredData.brands.map(brand => ({
+              name: brand.name,
+              ranking: brand.ranking,
+              positives: brand.positives || [],
+              negatives: brand.negatives || []
+            }))
+          });
+          
+          // Aggregate brand data
+          response.structuredData.brands.forEach(brand => {
+            const key = brand.name.toLowerCase();
+            const existing = allBrands.get(key) || { 
+              name: brand.name, 
+              score: 0, 
+              count: 0, 
+              sentiment: [] 
+            };
+            existing.score += (8 - brand.ranking); // Higher ranking = more points
+            existing.count++;
+            existing.sentiment.push(brand.overallSentiment || 'positive');
+            allBrands.set(key, existing);
+          });
+        }
+      });
+      
+      // Create top brands list
+      const topRecommendedBrands = Array.from(allBrands.values())
+        .map(brand => ({
+          name: brand.name,
+          score: Math.round(brand.score / brand.count),
+          reasoning: `Ranked by ${brand.count} AI provider(s)`,
+          sentiment: brand.sentiment.includes('positive') ? 'positive' as const : 'negative' as const
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+      
+      // Create reportByBrand with AI providers format
+      Array.from(allBrands.values()).forEach(brand => {
+        const providerInsights = structuredResponses
+          .filter(resp => resp.structuredData?.brands?.some(b => b.name.toLowerCase() === brand.name.toLowerCase()))
+          .map(resp => {
+            const brandData = resp.structuredData!.brands.find(b => b.name.toLowerCase() === brand.name.toLowerCase())!;
+            return {
+              provider: resp.provider,
+              ranking: brandData.ranking,
+              positives: brandData.positives || [],
+              negatives: brandData.negatives || []
+            };
+          });
+        
+        if (providerInsights.length > 0) {
+          reportByBrand.push({
+            brandName: brand.name,
+            overallRanking: Math.round(brand.score / brand.count),
+            providerInsights,
+            aiProvidersThink: {
+              positiveAspects: Array.from(new Set(providerInsights.flatMap(p => p.positives))),
+              negativeAspects: Array.from(new Set(providerInsights.flatMap(p => p.negatives))),
+              keyFeatures: [`Ranked by ${brand.count} provider(s)`, `Average score: ${(brand.score / brand.count).toFixed(1)}`]
+            }
+          });
+        }
+      });
+      
+      return {
+        topRecommendedBrands,
+        resultsByPrompt: structuredResponses.map(response => ({
+          prompt: response.prompt,
+          providers: response.structuredData?.brands?.map(brand => ({
+            provider: response.provider,
+            recommendedBrand: brand.name,
+            reasoning: `Ranked #${brand.ranking}`,
+            sentiment: brand.overallSentiment === 'positive' ? 'positive' as const : 'negative' as const
+          })) || []
+        })),
+        aggregatedAnalysis: {
+          reportByProvider,
+          reportByBrand: reportByBrand.slice(0, 10)
+        }
+      };
+    }
+    
+    // Basic fallback for unstructured data
     return {
       topRecommendedBrands: competitorResults
         .map(result => {
-          // Simple brand extraction as fallback
           const brandMatch = result.response.match(/\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b/g);
           const brand = brandMatch?.[0] || 'Unknown Brand';
           return {
@@ -289,7 +385,7 @@ Return ONLY valid JSON, no additional text.
             sentiment: 'positive' as const
           };
         })
-        .slice(0, 5), // Top 5 only
+        .slice(0, 5),
       resultsByPrompt: competitorResults.reduce((acc, result) => {
         const existingPrompt = acc.find(p => p.prompt === result.prompt);
         const brandMatch = result.response.match(/\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b/g);
