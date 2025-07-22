@@ -54,82 +54,89 @@ export default function CompetitorPromptSection({ onPromptsChange }: CompetitorP
   };
 
   return (
-    <Card className="mb-8">
-      <CardContent className="p-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-            <Users className="w-5 h-5 text-purple-600" />
+    <div className="mb-8">
+      {/* Header */}
+      <div className="mb-6">
+        <div className="flex items-center space-x-3 mb-2">
+          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
+            <Users className="w-4 h-4 text-white" />
           </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Competitor Analysis Prompts</h2>
-            <p className="text-sm text-gray-600">Add custom prompts to see which brands AI models recommend</p>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900">Analysis Prompts</h2>
         </div>
+        <p className="text-sm text-gray-600 ml-11">Add prompts to discover which brands AI models recommend</p>
+      </div>
 
-        {/* Add Custom Prompt */}
-        <div className="mb-6">
-          <Label className="text-sm font-medium text-gray-700 mb-2">Add Custom Prompt</Label>
-          <div className="flex space-x-3">
-            <Textarea
-              placeholder="e.g., Which software development platform is best for a startup team?"
-              value={newPrompt}
-              onChange={(e) => setNewPrompt(e.target.value)}
-              className="flex-1 min-h-[80px]"
-            />
-            <Button 
-              onClick={addCustomPrompt}
-              disabled={!newPrompt.trim()}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add
-            </Button>
-          </div>
-        </div>
-
-        {/* Predefined Prompts */}
-        <div className="mb-6">
-          <Label className="text-sm font-medium text-gray-700 mb-3">Quick Add Prompts</Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {predefinedPrompts.map((prompt, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                className="text-left h-auto p-3 justify-start"
-                onClick={() => addPredefinedPrompt(prompt)}
-                disabled={customPrompts.includes(prompt)}
+      {/* Add Custom Prompt */}
+      <div className="mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <div className="p-4">
+            <div className="flex space-x-3">
+              <Textarea
+                placeholder="e.g., Which software development platform is best for a startup team?"
+                value={newPrompt}
+                onChange={(e) => setNewPrompt(e.target.value)}
+                className="flex-1 min-h-[60px] border-0 bg-gray-50 resize-none focus:bg-white transition-colors"
+              />
+              <Button 
+                onClick={addCustomPrompt}
+                disabled={!newPrompt.trim()}
+                className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-sm px-4 h-auto py-3"
               >
-                <span className="text-sm text-gray-700 line-clamp-2">{prompt}</span>
+                <Plus className="w-4 h-4" />
               </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Predefined Prompts */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Templates</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          {predefinedPrompts.map((prompt, index) => (
+            <button
+              key={index}
+              className={`text-left p-3 rounded-lg border transition-all duration-200 ${
+                customPrompts.includes(prompt)
+                  ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                  : "border-gray-200 bg-white hover:border-violet-300 hover:shadow-sm hover:bg-violet-50"
+              }`}
+              onClick={() => addPredefinedPrompt(prompt)}
+              disabled={customPrompts.includes(prompt)}
+            >
+              <span className="text-sm text-gray-700 leading-relaxed">{prompt}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Selected Prompts */}
+      {customPrompts.length > 0 && (
+        <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-200 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-medium text-gray-900">Selected Prompts</h4>
+            <Badge variant="secondary" className="bg-violet-100 text-violet-700 border-violet-200">
+              {customPrompts.length}
+            </Badge>
+          </div>
+          <div className="space-y-2">
+            {customPrompts.map((prompt, index) => (
+              <div 
+                key={index} 
+                className="group flex items-start justify-between p-3 bg-white rounded-lg border border-white shadow-sm hover:shadow-md transition-shadow duration-200"
+              >
+                <span className="text-sm text-gray-700 flex-1 mr-3 leading-relaxed">{prompt}</span>
+                <button
+                  className="opacity-0 group-hover:opacity-100 w-6 h-6 rounded-full bg-gray-100 hover:bg-red-100 flex items-center justify-center transition-all duration-200 flex-shrink-0"
+                  onClick={() => removePrompt(index)}
+                >
+                  <X className="w-3 h-3 text-gray-400 hover:text-red-500" />
+                </button>
+              </div>
             ))}
           </div>
         </div>
-
-        {/* Selected Prompts */}
-        {customPrompts.length > 0 && (
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">
-              Selected Prompts ({customPrompts.length})
-            </h4>
-            <div className="space-y-2">
-              {customPrompts.map((prompt, index) => (
-                <div key={index} className="flex items-start justify-between p-3 bg-white rounded border">
-                  <span className="text-sm text-gray-700 flex-1 mr-3">{prompt}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 flex-shrink-0"
-                    onClick={() => removePrompt(index)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }
