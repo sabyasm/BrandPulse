@@ -7,12 +7,21 @@ import AnalysisProgress from "../brand-monitor/analysis-progress";
 import CompetitorResults from "../brand-monitor/competitor-results";
 import AnalysisHistorySidebar from "../brand-monitor/analysis-history-sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useQuery } from "@tanstack/react-query";
+import type { BrandAnalysis } from "@shared/schema";
 
 export default function CompetitorMonitorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<number | null>(null);
   const [competitorPrompts, setCompetitorPrompts] = useState<string[]>([]);
   const isMobile = useIsMobile();
+  
+  // Fetch analyses data
+  const { data: analyses } = useQuery<BrandAnalysis[]>({
+    queryKey: ["/api/brand-monitor/analyses"],
+  });
+  
+  const selectedAnalysis = analyses?.find(analysis => analysis.id === selectedAnalysisId);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -93,8 +102,8 @@ export default function CompetitorMonitorDashboard() {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {selectedAnalysisId ? (
-              <div>Analysis results would be shown here for ID: {selectedAnalysisId}</div>
+            {selectedAnalysisId && selectedAnalysis ? (
+              <CompetitorResults analysis={selectedAnalysis} />
             ) : (
               <>
                 {/* Hero Section */}

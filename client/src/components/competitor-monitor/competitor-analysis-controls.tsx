@@ -5,8 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useBrandAnalysis } from "@/hooks/use-brand-analysis";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { AVAILABLE_MODELS } from "@/lib/openrouter";
+import type { BrandAnalysis } from "@shared/schema";
 
 
 
@@ -21,7 +24,37 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
     "openai/gpt-4o-mini"
   ]);
   
-  const { startAnalysis, isStartingAnalysis } = useBrandAnalysis();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
+  const startAnalysis = useMutation({
+    mutationFn: async (data: {
+      companyId: number;
+      apiKey: string;
+      selectedProviders: string[];
+      selectedPrompts: string[];
+      webSearchEnabled: boolean;
+      title: string;
+      analysisType?: string;
+    }) => {
+      const response = await apiRequest("POST", "/api/brand-monitor/analyze", data);
+      return response.json() as Promise<BrandAnalysis>;
+    },
+    onSuccess: (analysis) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/brand-monitor/analyses"] });
+      toast({
+        title: "Analysis started",
+        description: `Competitor analysis has begun`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Analysis failed to start",
+        description: error.message || "Failed to start competitor analysis",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleStartAnalysis = async () => {
     if (selectedProviders.length === 0) {
@@ -201,12 +234,12 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
           {/* Start Analysis Button */}
           <Button 
             onClick={handleStartAnalysis}
-            disabled={isStartingAnalysis || selectedProviders.length === 0 || prompts.length === 0}
+            disabled={startAnalysis.isPending || selectedProviders.length === 0 || prompts.length === 0}
             size="lg"
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
           >
             <Play className="w-5 h-5 mr-2" />
-            {isStartingAnalysis ? "Starting Analysis..." : "Start Competitor Analysis"}
+            {startAnalysis.isPending ? "Starting Analysis..." : "Start Competitor Analysis"}
           </Button>
         </div>
       </CardContent>
