@@ -15,8 +15,7 @@ interface CompetitorAnalysisControlsProps {
 export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalysisControlsProps) {
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([
-    "google/gemini-2.5-flash",
-    "anthropic/claude-3.7-sonnet", 
+    "deepseek/deepseek-chat-v3-0324",
     "openai/gpt-4o-mini"
   ]);
   
@@ -84,27 +83,58 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
 
           {/* AI Provider Selection */}
           <div>
-            <Label className="text-sm font-medium text-gray-700 mb-3 block">
+            <Label className="text-sm font-medium text-gray-700 mb-4 block">
               AI Model Providers ({selectedProviders.length} selected)
             </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {AVAILABLE_MODELS.map((model) => (
-                <Button
+                <div
                   key={model.id}
-                  variant="outline"
-                  size="sm"
-                  className={`p-3 transition-colors ${
+                  className={`relative rounded-xl border-2 transition-all duration-200 cursor-pointer group hover:shadow-lg ${
                     selectedProviders.includes(model.id)
-                      ? "border-blue-500 bg-blue-100 text-blue-700"
-                      : "border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50"
+                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-md"
+                      : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
                   }`}
                   onClick={() => toggleProvider(model.id)}
                 >
-                  <div className="text-center">
-                    <div className="text-sm font-medium">{model.name}</div>
-                    <div className="text-xs text-gray-500">{model.provider}</div>
+                  <div className="p-4">
+                    {/* Selection Indicator */}
+                    <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 transition-all ${
+                      selectedProviders.includes(model.id)
+                        ? "bg-blue-500 border-blue-500"
+                        : "border-gray-300 group-hover:border-blue-400"
+                    }`}>
+                      {selectedProviders.includes(model.id) && (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Provider Icon/Initial */}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-sm font-bold ${
+                      selectedProviders.includes(model.id)
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
+                    }`}>
+                      {model.provider.charAt(0)}
+                    </div>
+                    
+                    {/* Model Info */}
+                    <div>
+                      <h3 className={`font-semibold text-sm mb-1 ${
+                        selectedProviders.includes(model.id) ? "text-blue-900" : "text-gray-900"
+                      }`}>
+                        {model.name}
+                      </h3>
+                      <p className={`text-xs ${
+                        selectedProviders.includes(model.id) ? "text-blue-700" : "text-gray-500"
+                      }`}>
+                        {model.provider}
+                      </p>
+                    </div>
                   </div>
-                </Button>
+                </div>
               ))}
             </div>
           </div>
