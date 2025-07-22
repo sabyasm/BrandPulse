@@ -156,16 +156,11 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
                     
                     {/* Model Info */}
                     <div>
-                      <h3 className={`font-semibold text-sm mb-1 ${
+                      <h3 className={`font-semibold text-sm ${
                         selectedProviders.includes(model.id) ? "text-blue-900" : "text-gray-900"
                       }`}>
                         {model.name}
                       </h3>
-                      <p className={`text-xs ${
-                        selectedProviders.includes(model.id) ? "text-blue-700" : "text-gray-500"
-                      }`}>
-                        {model.provider}
-                      </p>
                     </div>
                   </div>
                 </div>
