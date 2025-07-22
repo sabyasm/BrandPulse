@@ -111,13 +111,70 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
                       )}
                     </div>
                     
-                    {/* Provider Icon/Initial */}
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-sm font-bold ${
+                    {/* Provider Icon */}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
                       selectedProviders.includes(model.id)
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600"
+                        ? "bg-blue-500"
+                        : "bg-gray-100 group-hover:bg-blue-100"
                     }`}>
-                      {model.provider.charAt(0)}
+                      {/* Custom icon based on provider */}
+                      {model.provider === "Google" && (
+                        <div className={`w-6 h-6 rounded-full ${
+                          selectedProviders.includes(model.id) ? "bg-white" : "bg-red-500"
+                        }`}>
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className={`w-3 h-3 rounded-full ${
+                              selectedProviders.includes(model.id) ? "bg-blue-500" : "bg-white"
+                            }`}></div>
+                          </div>
+                        </div>
+                      )}
+                      {model.provider === "DeepSeek" && (
+                        <div className={`w-6 h-6 ${
+                          selectedProviders.includes(model.id) ? "text-white" : "text-purple-600"
+                        }`}>
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                            <path d="M12 2L2 7v10l10 5 10-5V7l-10-5zM12 4.5L18.5 8 12 11.5 5.5 8 12 4.5zM4 9.5l7 3.5v7l-7-3.5v-7zm16 0v7l-7 3.5v-7l7-3.5z"/>
+                          </svg>
+                        </div>
+                      )}
+                      {model.provider === "xAI" && (
+                        <div className={`w-6 h-6 ${
+                          selectedProviders.includes(model.id) ? "text-white" : "text-gray-800"
+                        }`}>
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                            <path d="M8 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                        </div>
+                      )}
+                      {model.provider === "OpenAI" && (
+                        <div className={`w-6 h-6 ${
+                          selectedProviders.includes(model.id) ? "text-white" : "text-emerald-600"
+                        }`}>
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m15.5-6.5l-4.24 4.24M7.76 16.24l-4.24 4.24m12.73 0l-4.24-4.24M7.76 7.76L3.52 3.52"/>
+                          </svg>
+                        </div>
+                      )}
+                      {model.provider === "Anthropic" && (
+                        <div className={`w-6 h-6 ${
+                          selectedProviders.includes(model.id) ? "text-white" : "text-orange-600"
+                        }`}>
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          </svg>
+                        </div>
+                      )}
+                      {model.provider === "MoonshotAI" && (
+                        <div className={`w-6 h-6 ${
+                          selectedProviders.includes(model.id) ? "text-white" : "text-indigo-600"
+                        }`}>
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                            <path d="M12 2l-1.09 4.26L7 7.27l5 3.87-1.18 4.88L12 14.77l1.18 1.25L12 22l3.09-4.26L22 16.73l-5-3.87 1.18-4.88L12 2z"/>
+                          </svg>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Model Info */}
