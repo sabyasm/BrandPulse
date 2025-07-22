@@ -88,33 +88,20 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
             <Label className="text-sm font-medium text-gray-700 mb-4 block">
               AI Model Providers ({selectedProviders.length} selected)
             </Label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
               {AVAILABLE_MODELS.map((model) => (
                 <div
                   key={model.id}
-                  className={`relative rounded-xl border-2 transition-all duration-200 cursor-pointer group hover:shadow-lg ${
+                  className={`relative rounded-lg border transition-all duration-200 cursor-pointer group hover:shadow-md ${
                     selectedProviders.includes(model.id)
-                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-md"
+                      ? "border-blue-500 bg-blue-50 shadow-sm"
                       : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50"
                   }`}
                   onClick={() => toggleProvider(model.id)}
                 >
-                  <div className="p-4">
-                    {/* Selection Indicator */}
-                    <div className={`absolute top-3 right-3 w-4 h-4 rounded-full border-2 transition-all ${
-                      selectedProviders.includes(model.id)
-                        ? "bg-blue-500 border-blue-500"
-                        : "border-gray-300 group-hover:border-blue-400"
-                    }`}>
-                      {selectedProviders.includes(model.id) && (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                        </div>
-                      )}
-                    </div>
-                    
+                  <div className="p-3 flex flex-col items-center text-center">
                     {/* Provider Icon */}
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 p-2 ${
+                    <div className={`w-8 h-8 rounded-md flex items-center justify-center mb-2 p-1.5 ${
                       selectedProviders.includes(model.id)
                         ? "bg-blue-500"
                         : "bg-gray-100 group-hover:bg-blue-100"
@@ -132,7 +119,7 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
                           return domainMap[model.provider] || model.provider.toLowerCase() + ".com";
                         })()}&sz=64`}
                         alt={`${model.provider} icon`}
-                        className="w-6 h-6 object-contain"
+                        className="w-5 h-5 object-contain"
                         onError={(e) => {
                           // Fallback to a generic icon if favicon fails
                           const target = e.currentTarget as HTMLImageElement;
@@ -143,7 +130,7 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
                       />
                       {/* Fallback icon */}
                       <div 
-                        className={`w-6 h-6 rounded-full hidden ${
+                        className={`w-5 h-5 rounded-full hidden ${
                           selectedProviders.includes(model.id) ? "bg-white" : "bg-gray-400"
                         }`}
                         style={{ display: 'none' }}
@@ -156,7 +143,7 @@ export default function CompetitorAnalysisControls({ prompts }: CompetitorAnalys
                     
                     {/* Model Info */}
                     <div>
-                      <h3 className={`font-semibold text-sm ${
+                      <h3 className={`font-medium text-xs leading-tight ${
                         selectedProviders.includes(model.id) ? "text-blue-900" : "text-gray-900"
                       }`}>
                         {model.name}
