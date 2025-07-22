@@ -292,14 +292,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test OpenRouter API key
   app.post("/api/brand-monitor/test-api-key", async (req, res) => {
     try {
-      const { apiKey } = req.body;
+      const { apiKey: requestApiKey } = req.body;
+      
+      // Use environment variable if apiKey is "env" or not provided
+      const apiKey = requestApiKey === "env" || !requestApiKey 
+        ? process.env.OPENROUTER_API_KEY 
+        : requestApiKey;
       
       if (!apiKey) {
         return res.status(400).json({ error: "API key is required" });
       }
 
       // Test with a simple prompt
-      await callOpenRouter(apiKey, "openai/gpt-4", "Say 'API key works'");
+      await callOpenRouter(apiKey, "openai/gpt-4o-mini", "Say 'API key works'");
       
       res.json({ valid: true });
     } catch (error: any) {
@@ -334,10 +339,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start brand analysis
   app.post("/api/brand-monitor/analyze", async (req, res) => {
     try {
-      const { apiKey, companyId, analysisType } = req.body;
+      const { apiKey: requestApiKey, companyId, analysisType } = req.body;
+      
+      // Use environment variable if apiKey is "env" or not provided
+      const apiKey = requestApiKey === "env" || !requestApiKey 
+        ? process.env.OPENROUTER_API_KEY 
+        : requestApiKey;
       
       if (!apiKey) {
-        return res.status(400).json({ error: "OpenRouter API key is required" });
+        return res.status(400).json({ error: "OpenRouter API key is required. Please set OPENROUTER_API_KEY environment variable." });
       }
 
       const currentAnalysisType = analysisType || "brand";
