@@ -57,7 +57,17 @@ Preferred communication style: Simple, everyday language.
    - Competitor recommendation tracking showing which LLM recommends which brand
 6. **Custom Prompt Support**: Users can add custom prompts for competitor analysis
 
-## Recent Changes (July 21, 2025)
+## Recent Changes (July 24, 2025)
+✓ **NEW LANDING PAGE**: Created OpenRouter-inspired homepage for brand monitoring platform
+  - Built hero section showcasing single prompt execution across 50+ AI models
+  - Added featured AI providers section with statistics (OpenAI GPT-4, Claude 3.5 Sonnet, Gemini Pro)
+  - Included platform metrics section (12M+ brand queries, 50+ AI providers, 2.5k+ users)
+  - Created features showcase highlighting multi-LLM analysis and competitive intelligence
+  - Maintained BrandGEO branding with gradient styling and Flame logo
+  - Added clear call-to-action directing users to competitor monitor functionality
+  - Updated routing to use new landing page as homepage (/) with competitor monitor at /competitor-monitor
+
+## Previous Changes (July 21, 2025)
 ✓ **MAJOR UPDATE**: Enhanced competitor monitor functionality with AI-powered analysis pipeline:
   - GPT-4.1 prompt enhancement: Original user prompts are enhanced to force structured brand ranking
   - Structured output: AI providers return JSON with positives/negatives for each brand
