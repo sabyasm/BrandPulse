@@ -9,9 +9,9 @@ import { Link } from "wouter";
 // Featured AI Provider data
 const featuredProviders = [
   {
-    name: "OpenAI GPT-4",
+    name: "OpenAI GPT-4.1",
     provider: "openai",
-    icon: "🤖",
+    domain: "openai.com",
     sentiment: "positive",
     mentionFreq: "High",
     confidence: "94%",
@@ -19,9 +19,9 @@ const featuredProviders = [
     color: "bg-emerald-50 text-emerald-700"
   },
   {
-    name: "Claude 3.5 Sonnet", 
+    name: "Claude 3.7 Sonnet", 
     provider: "anthropic",
-    icon: "🧠",
+    domain: "anthropic.com",
     sentiment: "positive",
     mentionFreq: "High", 
     confidence: "92%",
@@ -29,9 +29,9 @@ const featuredProviders = [
     color: "bg-blue-50 text-blue-700"
   },
   {
-    name: "Gemini Pro",
+    name: "Gemini 2.5 Pro",
     provider: "google", 
-    icon: "💎",
+    domain: "google.com",
     sentiment: "neutral",
     mentionFreq: "Medium",
     confidence: "89%",
@@ -42,6 +42,8 @@ const featuredProviders = [
 
 // Rotating placeholder examples
 const placeholderExamples = [
+  "Which fitness tracker is best for beginners?",
+  "Why do people prefer Brand A over Brand B?",
   "Is Brand A better than Brand B for finance?",
   "Top luxury hotels in Paris?",
   "Why do people choose Tesla over BMW?",
@@ -201,7 +203,7 @@ export default function Landing() {
               <div className="relative">
                 <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900">Featured AI Providers</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">AI Models Are Choosing Favorites. Where Do You Stand?</h3>
                     <Badge variant="secondary" className="text-xs">
                       View All 50+
                     </Badge>
@@ -211,8 +213,20 @@ export default function Landing() {
                     {featuredProviders.map((provider, index) => (
                       <div key={provider.name} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                         <div className="flex items-center space-x-4">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${provider.color}`}>
-                            {provider.icon}
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${provider.color}`}>
+                            <img 
+                              src={`https://www.google.com/s2/favicons?domain=${provider.domain}&sz=32`}
+                              alt={provider.name}
+                              className="w-6 h-6"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                if (fallback) {
+                                  fallback.style.display = 'block';
+                                }
+                              }}
+                            />
+                            <span className="text-lg hidden">{provider.provider === 'openai' ? '🤖' : provider.provider === 'anthropic' ? '🧠' : '💎'}</span>
                           </div>
                           <div>
                             <h4 className="font-semibold text-gray-900">{provider.name}</h4>
@@ -248,20 +262,41 @@ export default function Landing() {
                 </div>
 
                 {/* Visual Summary - Sentiment Spectrum */}
-                <div className="mt-6 bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Brand Sentiment Spectrum</h4>
+                <div className="mt-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border border-gray-100 shadow-sm">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4">Brand Sentiment Spectrum</h4>
                   <div className="relative">
-                    <div className="h-2 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 rounded-full"></div>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-xs text-gray-500">Negative</span>
-                      <span className="text-xs text-gray-500">Neutral</span>
-                      <span className="text-xs text-gray-500">Positive</span>
+                    {/* Enhanced gradient bar with subtle glow */}
+                    <div className="h-3 bg-gradient-to-r from-red-400 via-amber-300 to-emerald-400 rounded-full shadow-sm relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-300/30 via-amber-200/30 to-emerald-300/30 rounded-full animate-pulse"></div>
                     </div>
-                    {/* Sentiment markers */}
-                    <div className="absolute -top-1 flex justify-between w-full">
-                      <div className="w-3 h-3 bg-green-500 rounded-full transform translate-x-2"></div>
-                      <div className="w-3 h-3 bg-green-400 rounded-full transform -translate-x-2"></div>
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full transform -translate-x-6"></div>
+                    
+                    {/* Sentiment markers with enhanced styling */}
+                    <div className="absolute -top-2 w-full flex justify-between">
+                      <div className="relative">
+                        <div className="w-4 h-4 bg-emerald-500 rounded-full shadow-md border-2 border-white transform translate-x-16 animate-pulse"></div>
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 translate-x-16">
+                          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">GPT-4.1</span>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <div className="w-4 h-4 bg-emerald-400 rounded-full shadow-md border-2 border-white transform -translate-x-8 animate-pulse animation-delay-100"></div>
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 -translate-x-8">
+                          <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Claude</span>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <div className="w-4 h-4 bg-amber-400 rounded-full shadow-md border-2 border-white transform -translate-x-20 animate-pulse animation-delay-200"></div>
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 -translate-x-20">
+                          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md">Gemini</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Labels with enhanced styling */}
+                    <div className="flex justify-between items-center mt-8 pt-2">
+                      <span className="text-xs font-medium text-red-500">Negative</span>
+                      <span className="text-xs font-medium text-amber-500">Neutral</span>
+                      <span className="text-xs font-medium text-emerald-500">Positive</span>
                     </div>
                   </div>
                 </div>
