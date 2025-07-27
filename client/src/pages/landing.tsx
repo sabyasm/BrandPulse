@@ -44,6 +44,7 @@ const featuredProviders = [
 const placeholderExamples = [
   "Which fitness tracker is best for beginners?",
   "Why do people prefer Brand A over Brand B?",
+  "Which credit card has best cash back reward?",
   "Is Brand A better than Brand B for finance?",
   "Top luxury hotels in Paris?",
   "Why do people choose Tesla over BMW?",
@@ -95,11 +96,11 @@ export default function Landing() {
   const [demoPrompt, setDemoPrompt] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
-  // Rotate placeholder text every 3 seconds
+  // Rotate placeholder text every 2 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setPlaceholderIndex((prev) => (prev + 1) % placeholderExamples.length);
-    }, 3000);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -177,8 +178,11 @@ export default function Landing() {
                     <Button 
                       size="lg"
                       className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 h-14 rounded-l-none rounded-r-xl"
+                      asChild
                     >
-                      <ArrowRight className="w-5 h-5" />
+                      <Link href="/competitor-monitor">
+                        <ArrowRight className="w-5 h-5" />
+                      </Link>
                     </Button>
                   </div>
                   <p className="text-sm text-gray-500 mt-2 text-left">
@@ -273,39 +277,39 @@ export default function Landing() {
                 {/* Visual Summary - Sentiment Spectrum */}
                 <div className="mt-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border border-gray-100 shadow-sm">
                   <h4 className="text-sm font-semibold text-gray-700 mb-6">Brand Sentiment Spectrum</h4>
-                  <div className="relative pb-8">
+                  <div className="relative pb-12">
                     {/* Enhanced gradient bar */}
                     <div className="h-3 bg-gradient-to-r from-red-400 via-amber-300 to-emerald-400 rounded-full shadow-sm"></div>
                     
-                    {/* Sentiment markers positioned correctly */}
+                    {/* Sentiment markers positioned with proper spacing */}
                     <div className="absolute -top-2 w-full">
-                      {/* GPT-4.1 - Positive (right side) */}
-                      <div className="absolute" style={{left: '82%'}}>
+                      {/* GPT-4.1 - Positive (far right) */}
+                      <div className="absolute" style={{left: '85%'}}>
                         <div className="w-4 h-4 bg-emerald-500 rounded-full shadow-md border-2 border-white"></div>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                           <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">GPT-4.1</span>
                         </div>
                       </div>
                       
-                      {/* Claude - Positive (right-center) */}
-                      <div className="absolute" style={{left: '75%'}}>
+                      {/* Claude - Positive (right) */}
+                      <div className="absolute" style={{left: '70%'}}>
                         <div className="w-4 h-4 bg-emerald-400 rounded-full shadow-md border-2 border-white"></div>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                           <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Claude</span>
                         </div>
                       </div>
                       
                       {/* Gemini - Neutral (center) */}
-                      <div className="absolute" style={{left: '50%'}}>
+                      <div className="absolute" style={{left: '45%'}}>
                         <div className="w-4 h-4 bg-amber-400 rounded-full shadow-md border-2 border-white"></div>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                           <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md">Gemini</span>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Labels */}
-                    <div className="flex justify-between items-center mt-8">
+                    {/* Labels with more space */}
+                    <div className="flex justify-between items-center mt-12">
                       <span className="text-xs font-medium text-red-500">Negative</span>
                       <span className="text-xs font-medium text-amber-500">Neutral</span>
                       <span className="text-xs font-medium text-emerald-500">Positive</span>
