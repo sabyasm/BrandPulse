@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Flame, ArrowRight, Zap, Target, Users, BarChart3, Brain, Search, Star, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Flame, ArrowRight, Zap, Target, Users, BarChart3, Brain, Search, Star, ChevronRight, Play, Github, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,30 +12,52 @@ const featuredProviders = [
     name: "OpenAI GPT-4",
     provider: "openai",
     icon: "🤖",
-    tokensPerWeek: "2.1M",
-    latency: "1.2s",
-    growth: "+18.4%",
+    sentiment: "positive",
+    mentionFreq: "High",
+    confidence: "94%",
+    lastUpdated: "2h ago",
     color: "bg-emerald-50 text-emerald-700"
   },
   {
     name: "Claude 3.5 Sonnet", 
     provider: "anthropic",
     icon: "🧠",
-    tokensPerWeek: "1.8M",
-    latency: "1.1s", 
-    growth: "+24.1%",
+    sentiment: "positive",
+    mentionFreq: "High", 
+    confidence: "92%",
+    lastUpdated: "1h ago",
     color: "bg-blue-50 text-blue-700"
   },
   {
     name: "Gemini Pro",
     provider: "google", 
     icon: "💎",
-    tokensPerWeek: "1.5M",
-    latency: "0.9s",
-    growth: "+31.2%", 
+    sentiment: "neutral",
+    mentionFreq: "Medium",
+    confidence: "89%",
+    lastUpdated: "3h ago", 
     color: "bg-violet-50 text-violet-700"
   }
 ];
+
+// Rotating placeholder examples
+const placeholderExamples = [
+  "Is Brand A better than Brand B for finance?",
+  "Top luxury hotels in Paris?",
+  "Why do people choose Tesla over BMW?",
+  "Best project management tools for teams?",
+  "Which smartphone has the best camera?"
+];
+
+// Helper function to get sentiment emoji
+const getSentimentEmoji = (sentiment: string) => {
+  switch (sentiment) {
+    case "positive": return "🟢";
+    case "neutral": return "🟡";
+    case "negative": return "🔴";
+    default: return "🟡";
+  }
+};
 
 const stats = [
   { value: "12M+", label: "Brand Queries", description: "Monthly brand analysis requests" },
@@ -69,6 +91,15 @@ const features = [
 
 export default function Landing() {
   const [demoPrompt, setDemoPrompt] = useState("Which CRM software should I choose for my startup?");
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+
+  // Rotate placeholder text every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % placeholderExamples.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
@@ -119,8 +150,8 @@ export default function Landing() {
                   </span>
                 </h1>
                 
-                <p className="text-xl text-gray-600 mb-8 max-w-2xl">
-                  Execute a single prompt across <span className="font-semibold text-blue-600">50+ AI models</span> to discover how your brand ranks against competitors. Better insights, unified analysis, real-time intelligence.
+                <p className="text-xl font-semibold text-gray-700 mb-8 max-w-2xl leading-relaxed">
+                  Instantly see how the world's leading AI models perceive your brand and your competitors.
                 </p>
 
                 {/* Demo Input */}
@@ -129,12 +160,12 @@ export default function Landing() {
                     <Input
                       value={demoPrompt}
                       onChange={(e) => setDemoPrompt(e.target.value)}
-                      placeholder="Enter your brand query..."
-                      className="text-lg px-6 py-4 border-2 border-gray-200 rounded-l-xl focus:border-blue-500 focus:ring-0"
+                      placeholder={placeholderExamples[placeholderIndex]}
+                      className="text-lg px-6 py-4 h-14 border-2 border-gray-200 rounded-l-xl focus:border-blue-500 focus:ring-0 transition-all duration-300"
                     />
                     <Button 
                       size="lg"
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 rounded-l-none rounded-r-xl"
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8 h-14 rounded-l-none rounded-r-xl"
                     >
                       <ArrowRight className="w-5 h-5" />
                     </Button>
@@ -148,15 +179,20 @@ export default function Landing() {
                   <Button 
                     size="lg" 
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-8"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    View Demo Results
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="px-8"
                     asChild
                   >
                     <Link href="/competitor-monitor">
                       Start Free Analysis
-                      <ChevronRight className="w-4 h-4 ml-2" />
+                      <Search className="w-4 h-4 ml-2" />
                     </Link>
-                  </Button>
-                  <Button variant="outline" size="lg" className="px-8">
-                    View Demo Results
                   </Button>
                 </div>
               </div>
@@ -186,22 +222,47 @@ export default function Landing() {
                         
                         <div className="text-right">
                           <div className="flex items-center space-x-6 text-sm">
-                            <div>
-                              <span className="font-semibold text-emerald-600">{provider.tokensPerWeek}</span>
-                              <p className="text-xs text-gray-500">Weekly queries</p>
+                            <div className="text-center">
+                              <div className="flex items-center justify-center">
+                                <span className="text-lg">{getSentimentEmoji(provider.sentiment)}</span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">Sentiment</p>
                             </div>
                             <div>
-                              <span className="font-semibold text-blue-600">{provider.latency}</span>
-                              <p className="text-xs text-gray-500">Avg latency</p>
+                              <span className="font-semibold text-blue-600">{provider.mentionFreq}</span>
+                              <p className="text-xs text-gray-500">Frequency</p>
                             </div>
                             <div>
-                              <span className="font-semibold text-green-600">{provider.growth}</span>
-                              <p className="text-xs text-gray-500">Growth</p>
+                              <span className="font-semibold text-emerald-600">{provider.confidence}</span>
+                              <p className="text-xs text-gray-500">Confidence</p>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-600">{provider.lastUpdated}</span>
+                              <p className="text-xs text-gray-500">Updated</p>
                             </div>
                           </div>
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* Visual Summary - Sentiment Spectrum */}
+                <div className="mt-6 bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Brand Sentiment Spectrum</h4>
+                  <div className="relative">
+                    <div className="h-2 bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 rounded-full"></div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs text-gray-500">Negative</span>
+                      <span className="text-xs text-gray-500">Neutral</span>
+                      <span className="text-xs text-gray-500">Positive</span>
+                    </div>
+                    {/* Sentiment markers */}
+                    <div className="absolute -top-1 flex justify-between w-full">
+                      <div className="w-3 h-3 bg-green-500 rounded-full transform translate-x-2"></div>
+                      <div className="w-3 h-3 bg-green-400 rounded-full transform -translate-x-2"></div>
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full transform -translate-x-6"></div>
+                    </div>
                   </div>
                 </div>
 
@@ -304,8 +365,26 @@ export default function Landing() {
               </div>
               <span className="text-xl font-bold">BrandGEO Monitor</span>
             </div>
-            <div className="text-gray-400 text-sm">
-              © 2025 BrandGEO Monitor. All rights reserved.
+            
+            {/* Open Source Badge */}
+            <div className="flex items-center space-x-6">
+              <a 
+                href="https://github.com/sabyasm/BrandPulse" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <Brain className="w-4 h-4 text-blue-400" />
+                <span className="text-sm">Made with</span>
+                <Heart className="w-4 h-4 text-red-400" />
+                <span className="text-sm">by humans and AI</span>
+                <span className="text-gray-400">|</span>
+                <Github className="w-4 h-4 text-white" />
+                <span className="text-sm font-medium">Open Source</span>
+              </a>
+              <div className="text-gray-400 text-sm">
+                © 2025 BrandGEO Monitor. All rights reserved.
+              </div>
             </div>
           </div>
         </div>
