@@ -92,7 +92,7 @@ const features = [
 ];
 
 export default function Landing() {
-  const [demoPrompt, setDemoPrompt] = useState("Which CRM software should I choose for my startup?");
+  const [demoPrompt, setDemoPrompt] = useState("");
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
   // Rotate placeholder text every 3 seconds
@@ -263,37 +263,40 @@ export default function Landing() {
 
                 {/* Visual Summary - Sentiment Spectrum */}
                 <div className="mt-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border border-gray-100 shadow-sm">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-4">Brand Sentiment Spectrum</h4>
-                  <div className="relative">
-                    {/* Enhanced gradient bar with subtle glow */}
-                    <div className="h-3 bg-gradient-to-r from-red-400 via-amber-300 to-emerald-400 rounded-full shadow-sm relative overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-red-300/30 via-amber-200/30 to-emerald-300/30 rounded-full animate-pulse"></div>
-                    </div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-6">Brand Sentiment Spectrum</h4>
+                  <div className="relative pb-8">
+                    {/* Enhanced gradient bar */}
+                    <div className="h-3 bg-gradient-to-r from-red-400 via-amber-300 to-emerald-400 rounded-full shadow-sm"></div>
                     
-                    {/* Sentiment markers with enhanced styling */}
-                    <div className="absolute -top-2 w-full flex justify-between">
-                      <div className="relative">
-                        <div className="w-4 h-4 bg-emerald-500 rounded-full shadow-md border-2 border-white transform translate-x-16 animate-pulse"></div>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 translate-x-16">
+                    {/* Sentiment markers positioned correctly */}
+                    <div className="absolute -top-2 w-full">
+                      {/* GPT-4.1 - Positive (right side) */}
+                      <div className="absolute" style={{left: '82%'}}>
+                        <div className="w-4 h-4 bg-emerald-500 rounded-full shadow-md border-2 border-white"></div>
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                           <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">GPT-4.1</span>
                         </div>
                       </div>
-                      <div className="relative">
-                        <div className="w-4 h-4 bg-emerald-400 rounded-full shadow-md border-2 border-white transform -translate-x-8 animate-pulse animation-delay-100"></div>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 -translate-x-8">
+                      
+                      {/* Claude - Positive (right-center) */}
+                      <div className="absolute" style={{left: '75%'}}>
+                        <div className="w-4 h-4 bg-emerald-400 rounded-full shadow-md border-2 border-white"></div>
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                           <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">Claude</span>
                         </div>
                       </div>
-                      <div className="relative">
-                        <div className="w-4 h-4 bg-amber-400 rounded-full shadow-md border-2 border-white transform -translate-x-20 animate-pulse animation-delay-200"></div>
-                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 -translate-x-20">
+                      
+                      {/* Gemini - Neutral (center) */}
+                      <div className="absolute" style={{left: '50%'}}>
+                        <div className="w-4 h-4 bg-amber-400 rounded-full shadow-md border-2 border-white"></div>
+                        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                           <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-md">Gemini</span>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Labels with enhanced styling */}
-                    <div className="flex justify-between items-center mt-8 pt-2">
+                    {/* Labels */}
+                    <div className="flex justify-between items-center mt-8">
                       <span className="text-xs font-medium text-red-500">Negative</span>
                       <span className="text-xs font-medium text-amber-500">Neutral</span>
                       <span className="text-xs font-medium text-emerald-500">Positive</span>
@@ -309,22 +312,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Stats Section */}
-        <section className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-              {stats.map((stat, index) => (
-                <div key={stat.label} className="text-center">
-                  <div className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-lg font-semibold text-gray-900 mb-1">{stat.label}</div>
-                  <div className="text-sm text-gray-600">{stat.description}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+
 
         {/* Features Section */}
         <section className="py-20 bg-gray-50">
