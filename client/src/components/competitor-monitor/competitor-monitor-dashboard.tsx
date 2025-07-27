@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Flame, Menu, X, Coins, ChevronDown, Users } from "lucide-react";
+import { Flame, Menu, X, Coins, ChevronDown, Users, Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import CompetitorPromptSection from "../brand-monitor/competitor-prompt-section";
 import CompetitorAnalysisControls from "./competitor-analysis-controls";
 import AnalysisProgress from "../brand-monitor/analysis-progress";
@@ -26,54 +27,42 @@ export default function CompetitorMonitorDashboard() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="px-4 sm:px-6 lg:px-8">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo and Navigation */}
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-yellow-500 rounded-lg flex items-center justify-center">
-                  <Flame className="w-4 h-4 text-white" />
-                </div>
-                <h1 className="text-xl font-bold text-gray-900">BrandGEO Monitor</h1>
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-yellow-500 rounded-lg flex items-center justify-center">
+                <Flame className="w-4 h-4 text-white" />
               </div>
-              
-              {/* Current Mode Indicator */}
-              <div className="hidden lg:flex items-center space-x-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-200">
-                <Users className="w-4 h-4 text-blue-600" />
-                <span className="text-blue-700 font-medium">Competitor Monitor</span>
-              </div>
+              <h1 className="text-xl font-bold text-gray-900">BrandGEO Monitor</h1>
             </div>
+
+            {/* Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link 
+                href="/brand-monitor"
+                className="text-gray-600 hover:text-gray-900 transition-colors px-3 py-2 text-sm font-medium"
+              >
+                Brand Monitor
+              </Link>
+              <div className="flex items-center space-x-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-200">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span className="text-blue-700 font-medium text-sm">Competitor Monitor</span>
+              </div>
+              <a 
+                href="https://github.com/sabyasm/BrandPulse" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-gray-600 hover:text-gray-900 transition-colors flex items-center space-x-2 px-3 py-2 text-sm font-medium"
+              >
+                <Github className="w-4 h-4" />
+                <span>GitHub</span>
+              </a>
+            </nav>
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
-              {/* Credits Display */}
-              <div className="hidden sm:flex items-center space-x-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-                <Coins className="w-4 h-4 text-emerald-600" />
-                <span className="text-emerald-700 text-sm font-medium">47 credits</span>
-              </div>
-
-              {/* Brand Monitor Link */}
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.location.href = '/brand-monitor'}
-                className="hidden sm:flex items-center space-x-2"
-              >
-                <span>Brand Monitor</span>
-                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Soon</span>
-              </Button>
-
-              {/* User Menu */}
-              <div className="relative">
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-sm font-medium">JD</span>
-                  </div>
-                  <ChevronDown className="w-3 h-3 text-gray-400" />
-                </Button>
-              </div>
-
               {/* Mobile Menu Toggle */}
               <Button
                 variant="ghost"

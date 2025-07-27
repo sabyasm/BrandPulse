@@ -55,7 +55,7 @@ export default function AnalysisHistorySidebar({
       <aside
         className={`${
           isMobile ? "fixed" : "sticky"
-        } top-0 h-screen w-80 bg-white border-r border-gray-200 z-50 flex flex-col ${
+        } ${isMobile ? "top-0 h-screen" : "top-16 h-[calc(100vh-4rem)]"} w-80 bg-white border-r border-gray-200 z-50 flex flex-col ${
           isMobile && isOpen ? "translate-x-0" : isMobile ? "-translate-x-full" : ""
         } transition-transform duration-300 ease-in-out lg:translate-x-0`}
       >
