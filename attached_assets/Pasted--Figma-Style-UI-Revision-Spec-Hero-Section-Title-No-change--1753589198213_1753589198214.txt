@@ -1,0 +1,86 @@
+---
+
+### 🎨 **Figma-Style UI Revision Spec**
+
+---
+
+#### 🟦 **Hero Section**
+
+* **Title** (No change):
+  `The Unified Platform For Brand Monitoring`
+
+* **Subheadline** (Update text):
+  Replace with →
+  `Instantly see how the world’s leading AI models perceive your brand and your competitors.`
+  *(Text style: Semi-bold, 20–22px, max width \~600px, line height 140%)*
+
+* **Prompt Input Box** (Visual emphasis):
+
+  * Increase height (`~56–64px`), pad left/right more
+  * Add rotating placeholder examples:
+
+    * “Is Brand A better than Brand B for finance?”
+    * “Top luxury hotels in Paris?”
+    * “Why do people choose Tesla over BMW?”
+  * Optional: Add a typing animation loop
+
+* **CTA Buttons** (Visual balance):
+
+  * Swap button order:
+
+    * Left: `View Demo Results` (Primary Style – same gradient as "Start Free Analysis")
+    * Right: `Start Free Analysis` (Secondary Style – outlined or white background)
+  * Use matching icons (play/demo or search icon)
+
+---
+
+#### 🟨 **AI Provider Panel**
+
+* **Remove**: `Weekly queries / Latency / Growth`
+
+* **Add Columns**:
+
+  * **Sentiment** → Use emoji or color-coded label: 🟢 Positive / 🟡 Neutral / 🔴 Negative
+  * **Mention Frequency** → High / Medium / Low
+  * **Confidence** → Display as percent (e.g., 92%)
+  * **Last Updated** → “2h ago”, “Today”, etc.
+
+* **Optional Enhancements**:
+
+  * Add a small AI model icon (GPT, Claude, etc.) + brand logos if allowed
+  * Add hover/click to expand reasoning snippets
+
+---
+
+#### 🟩 **Visual Summary Component (New Section)**
+
+* **Position**: Below AI Provider list OR as a right-side panel
+
+* **Chart Idea #1**:
+  **Sentiment Spectrum Bar** →
+  Horizontal bar showing each model’s brand sentiment plotted left-to-right (Negative to Positive)
+
+* **Chart Idea #2**:
+  **Word Cloud / Keyword Bubble** →
+  Aggregates descriptors pulled from all AI outputs (e.g., “innovative”, “expensive”, “easy to use”)
+
+---
+
+#### 🟪 **Open Source Callout (Footer or Badge Area)**
+
+* Add a small, warm badge or line like:
+
+  ```plaintext
+  🧠 Made with ❤️ by humans and AI | Open Source on GitHub
+  ```
+
+* Placement options:
+
+  * Bottom-left under main content
+  * As a floating badge on the corner (GitHub icon + heart)
+
+* Link: https://github.com/sabyasm/BrandPulse
+
+---
+
+Let me know if you want this structured as a Figma component tree, or if you’d like help designing the Sentiment Spectrum or Word Cloud component in React/HTML.
