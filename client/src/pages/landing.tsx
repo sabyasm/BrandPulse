@@ -119,14 +119,23 @@ export default function Landing() {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/competitor-monitor" className="text-gray-600 hover:text-gray-900 transition-colors">
-                Try Demo
-              </Link>
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
-              <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                Get Started
+              <a 
+                href="https://github.com/sabyasm/BrandPulse" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors hover:underline"
+              >
+                <Github className="w-4 h-4" />
+                <span>View on GitHub</span>
+              </a>
+              <Button 
+                size="sm" 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                asChild
+              >
+                <Link href="/competitor-monitor">
+                  Try Live Demo
+                </Link>
               </Button>
             </nav>
           </div>
