@@ -185,3 +185,25 @@ Preferred communication style: Simple, everyday language.
 - **Type Safety**: Full TypeScript coverage across frontend and backend
 
 The application follows a monorepo structure with shared TypeScript types between frontend and backend, ensuring type safety across the entire stack. The architecture supports real-time analysis tracking and can be extended to support additional AI providers and analysis types.
+
+## Local Deployment
+
+For local MacBook Air deployment, the project includes comprehensive setup scripts and documentation:
+
+### Quick Setup
+- **Automated Setup**: `./setup-mac.sh` - installs all dependencies and configures environment
+- **Manual Setup**: See `DEPLOYMENT.md` for step-by-step instructions
+- **Start Script**: `./start-local.sh` - verifies setup and starts the application
+
+### Requirements
+- macOS with Homebrew
+- Node.js v18+
+- PostgreSQL
+- OpenRouter API key
+
+### Key Files
+- `DEPLOYMENT.md`: Complete deployment guide with troubleshooting
+- `setup-mac.sh`: Automated setup script for macOS
+- `start-local.sh`: Application startup script
+- `.env.example`: Environment variable template
+- `README.md`: Project overview and quick start guide

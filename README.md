@@ -1,142 +1,125 @@
 # BrandGEO Monitor
 
-A multi-provider AI-powered brand monitoring platform that enables comprehensive competitive analysis across various AI models and providers.
+A comprehensive brand monitoring platform that enables competitive analysis across 50+ AI models using OpenRouter integration. Monitor how AI models rank your brand against competitors and discover which brands they recommend.
 
-## 🚀 Features
+## Features
 
-### Competitor Monitor (Primary Feature)
-- **AI-Powered Competitor Analysis**: Discover which brands AI models recommend in response to specific queries
-- **Multi-Provider Support**: Analyze recommendations across multiple AI providers simultaneously
-- **Custom Prompt Testing**: Test your own prompts to understand competitive positioning
-- **Comprehensive Reports**: Get detailed insights on brand rankings and AI provider perspectives
+- **Multi-LLM Analysis**: Execute prompts across 50+ AI models simultaneously
+- **Brand Recognition**: Intelligent brand mapping with authentic company logos
+- **Competitive Intelligence**: Analyze how AI models rank brands and make recommendations
+- **Real-time Monitoring**: Track brand visibility and competitor positioning
+- **Enhanced Analytics**: AI-powered aggregation and insights from multiple providers
 
-### Supported AI Models
-- **Google**: Gemini 2.5 Flash
-- **DeepSeek**: DeepSeek Chat v3
-- **xAI**: Grok 4  
-- **OpenAI**: GPT-4.1, GPT-4o Mini
-- **Anthropic**: Claude 4, Claude 3.7 Sonnet
-- **MoonshotAI**: Kimi K2
+## Quick Start
 
-## 🛠️ Technology Stack
+### Option 1: Automated Setup (Recommended)
+```bash
+# Clone and setup automatically
+git clone https://github.com/sabyasm/BrandPulse.git
+cd BrandPulse
+./setup-mac.sh
+```
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Express.js + TypeScript
+### Option 2: Manual Setup
+1. Install prerequisites (Node.js, PostgreSQL)
+2. Clone repository and install dependencies
+3. Setup database and environment variables
+4. Get OpenRouter API key
+5. Start the application
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
+## Technology Stack
+
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Shadcn/ui
+- **Backend**: Node.js, Express, TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
-- **UI Components**: shadcn/ui + Tailwind CSS
-- **API Integration**: OpenRouter for multi-provider AI access
-- **Routing**: Wouter for client-side routing
-- **State Management**: TanStack Query for server state
+- **AI Integration**: OpenRouter API (50+ providers)
+- **Build Tools**: Vite, esbuild
 
-## 🏗️ Architecture
+## API Integration
 
-### Frontend
-- **Modern React**: Function components with hooks
-- **TypeScript**: Full type safety across the application
-- **Responsive Design**: Mobile-first approach with Tailwind CSS
-- **Component Library**: shadcn/ui for consistent UI components
+The platform integrates with OpenRouter to access multiple AI providers:
+- OpenAI (GPT-4.1, GPT-4o Mini)
+- Anthropic (Claude 3.7, Claude 4)
+- Google (Gemini 2.5)
+- DeepSeek, Kimi, Grok, and more
 
-### Backend
-- **RESTful API**: Express.js with structured routes
-- **Database Management**: Drizzle ORM with PostgreSQL
-- **AI Integration**: OpenRouter API for multi-provider access
-- **Real-time Updates**: Progress tracking for long-running analyses
+## Environment Variables
 
-### Data Flow
-1. **Query Input**: Users enter competitive analysis prompts
-2. **AI Processing**: System queries multiple AI providers simultaneously
-3. **Results Aggregation**: Responses analyzed for brand mentions and rankings
-4. **Insights Generation**: Competitive positioning and recommendations extracted
-5. **Visualization**: Results displayed with comprehensive analysis
-
-## 🚦 Getting Started
-
-### Prerequisites
-- Node.js 20+
-- PostgreSQL database
-- OpenRouter API key
-
-### Environment Variables
 ```env
-OPENROUTER_API_KEY=your_openrouter_api_key
-DATABASE_URL=your_database_connection_string
+DATABASE_URL="postgresql://postgres:@localhost:5432/brandgeo_monitor"
+OPENROUTER_API_KEY="your_api_key_here"
+NODE_ENV=development
+PORT=5000
 ```
 
-### Installation & Development
+## Available Scripts
+
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run db:push      # Deploy database schema
+npm run check        # Type checking
 ```
 
-The application will be available at `http://localhost:5000`
+## Project Structure
 
-### Production Build
-```bash
-# Build for production
-npm run build
-
-# Start production server  
-npm run start
+```
+├── client/              # React frontend
+│   ├── src/
+│   │   ├── components/  # UI components
+│   │   ├── pages/       # Application pages
+│   │   └── lib/         # Utilities
+├── server/              # Express backend
+│   ├── routes.ts        # API routes
+│   ├── gemini.ts        # AI aggregation
+│   └── logo-service.ts  # Brand recognition
+├── shared/              # Shared types
+└── drizzle/            # Database migrations
 ```
 
-## 📊 Key Features
+## Key Features
 
-### Competitor Analysis
-- Multi-provider AI query execution
-- Brand mention extraction and ranking
-- Competitive positioning insights
-- Custom prompt testing capabilities
+### Brand Monitor
+- Extract company information from URLs
+- Monitor brand mentions across AI models
+- Track competitive positioning
 
-### Analysis Management
-- Historical analysis tracking
-- Progress monitoring for long-running queries
-- Results export and sharing
-- Analysis comparison tools
+### Competitor Monitor  
+- Custom prompt analysis
+- AI provider comparison
+- Enhanced reporting with insights
 
-### Provider Insights
-- Per-provider brand recommendations
-- Cross-provider consistency analysis
-- Model-specific bias detection
-- Provider performance metrics
+### Dynamic Logo Recognition
+- 100+ major brand mappings
+- Google Favicon API integration
+- Emoji fallbacks for categories
 
-## 🔧 Configuration
+## Contributing
 
-### AI Providers
-The application supports multiple AI providers through OpenRouter:
-- Configure provider selection per analysis
-- Customize model parameters
-- Set provider-specific prompts
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-### Analysis Settings
-- Custom prompt creation
-- Provider selection
-- Analysis depth configuration
-- Result filtering options
+## License
 
-## 📈 Future Roadmap
+MIT License - see [LICENSE](LICENSE) file for details.
 
-### Planned Features
-- **Brand Monitor**: Complete brand visibility tracking (Coming Soon)
-- **Advanced Analytics**: Deeper insights and trend analysis
-- **API Access**: Programmatic access to analysis results
-- **Team Collaboration**: Multi-user workspace management
-- **Integration Ecosystem**: Connect with popular marketing tools
+## Support
 
-## 🤝 Contributing
+For issues and questions:
+- Check [DEPLOYMENT.md](DEPLOYMENT.md) for setup problems
+- Review console logs for error details
+- Ensure API keys are properly configured
+- Verify database connectivity
 
-This project follows modern web development best practices:
-- TypeScript for type safety
-- ESLint for code quality
-- Prettier for code formatting
-- Conventional commits for version control
+## Acknowledgments
 
-## 📄 License
-
-This project is proprietary software developed for competitive intelligence purposes.
-
----
-
-**Note**: Brand Monitor functionality is currently under development and will be available soon. The current focus is on Competitor Monitor capabilities.
+- OpenRouter for AI model access
+- Shadcn/ui for component library
+- Drizzle for database ORM
+- Tailwind CSS for styling
