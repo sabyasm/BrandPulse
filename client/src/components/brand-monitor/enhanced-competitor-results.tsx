@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Crown, TrendingUp, Users, Plus, Minus, CheckCircle, XCircle, Lightbulb, Star, AlertCircle, Copy, ChevronDown, Award } from "lucide-react";
 import type { BrandAnalysis } from "@shared/schema";
 import { useState } from "react";
+import { BrandLogoWithName } from "@/components/ui/brand-logo";
 
 interface EnhancedCompetitorResultsProps {
   analysis: BrandAnalysis;
@@ -115,7 +116,15 @@ export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetit
               <Card key={index} className="overflow-hidden">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xl font-semibold text-gray-900">{brandReport.brandName}</h3>
+                    <div className="flex items-center space-x-4">
+                      <BrandLogoWithName 
+                        brandInfo={brandReport.providerInsights[0]?.brandInfo}
+                        brandName={brandReport.brandName}
+                        size="md"
+                        showName={false}
+                      />
+                      <h3 className="text-xl font-semibold text-gray-900">{brandReport.brandName}</h3>
+                    </div>
                     <div className="flex items-center space-x-2">
                       <Star className="w-5 h-5 text-yellow-500" />
                       <Badge variant="secondary" className="bg-blue-100 text-blue-700">
@@ -276,7 +285,11 @@ export default function EnhancedCompetitorResults({ analysis }: EnhancedCompetit
                             <Badge variant="secondary" className="bg-blue-100 text-blue-700">
                               #{brand.ranking}
                             </Badge>
-                            <h4 className="font-medium text-gray-900">{brand.name}</h4>
+                            <BrandLogoWithName 
+                              brandInfo={brand.brandInfo}
+                              brandName={brand.name}
+                              size="sm"
+                            />
                           </div>
                           <Crown className="w-5 h-5 text-yellow-500" />
                         </div>

@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertCompanySchema, insertBrandAnalysisSchema } from "@shared/schema";
 import { z } from "zod";
 import { processCompetitorResults } from "./gemini";
+import { processBrandLogos, recognizeBrand, type BrandInfo } from "./logo-service";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -23,6 +24,7 @@ function extractCompetitorRecommendations(response: string, prompt: string) {
     name: string;
     ranking: number;
     reason: string;
+    brandInfo?: BrandInfo;
   }> = [];
   
   let currentRanking = 1;
@@ -65,10 +67,14 @@ function extractCompetitorRecommendations(response: string, prompt: string) {
         const contextEnd = Math.min(response.length, matchIndex + 300);
         const context = response.slice(contextStart, contextEnd).trim();
         
+        // Process brand info for logo and domain
+        const brandInfo = recognizeBrand(name);
+        
         recommendations.push({
           name: name,
           ranking: currentRanking++,
-          reason: context
+          reason: context,
+          brandInfo
         });
         
         console.log(`Extracted brand: ${name}`);
@@ -432,6 +438,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Brand logo service endpoint
+  app.post("/api/brand-logos", (req, res) => {
+    try {
+      const { brandNames } = req.body;
+      
+      if (!Array.isArray(brandNames)) {
+        return res.status(400).json({ error: "brandNames must be an array" });
+      }
+      
+      const brandsWithLogos = processBrandLogos(brandNames);
+      res.json({ brands: brandsWithLogos });
+    } catch (error) {
+      console.error("Error processing brand logos:", error);
+      res.status(500).json({ error: "Failed to process brand logos" });
     }
   });
 

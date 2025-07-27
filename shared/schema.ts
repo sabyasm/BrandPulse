@@ -67,6 +67,7 @@ export const brandAnalyses = pgTable("brand_analyses", {
         name: string;
         ranking: number;
         reason: string;
+        brandInfo?: BrandInfo;
       }>;
     }>;
     enhancedPrompt?: string;
@@ -91,6 +92,7 @@ export const brandAnalyses = pgTable("brand_analyses", {
           ranking: number;
           positives: string[];
           negatives: string[];
+          brandInfo?: BrandInfo;
         }>;
       }>;
       reportByBrand: Array<{
@@ -101,6 +103,7 @@ export const brandAnalyses = pgTable("brand_analyses", {
           ranking: number;
           positives: string[];
           negatives: string[];
+          brandInfo?: BrandInfo;
         }>;
         aiProvidersThink: {
           positiveAspects: string[];
@@ -138,3 +141,12 @@ export type Company = typeof companies.$inferSelect;
 export type InsertCompany = z.infer<typeof insertCompanySchema>;
 export type BrandAnalysis = typeof brandAnalyses.$inferSelect;
 export type InsertBrandAnalysis = z.infer<typeof insertBrandAnalysisSchema>;
+
+// Brand Info interface for logo and domain information
+export interface BrandInfo {
+  name: string;
+  cleanName: string;
+  domain?: string;
+  logoUrl?: string;
+  fallbackIcon?: string;
+}

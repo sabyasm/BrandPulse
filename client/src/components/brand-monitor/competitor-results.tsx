@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Crown, TrendingUp, Eye, Plus, Minus } from "lucide-react";
 import type { BrandAnalysis } from "@shared/schema";
 import EnhancedCompetitorResults from "./enhanced-competitor-results";
+import { BrandLogoWithName } from "@/components/ui/brand-logo";
 
 interface CompetitorResultsProps {
   analysis: BrandAnalysis;
@@ -104,28 +105,40 @@ export default function CompetitorResults({ analysis }: CompetitorResultsProps) 
                 </div>
               ))
             ) : (
-              // Fallback to old extraction method
-              topBrands.slice(0, 6).map((brand, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">{brand.name}</h4>
-                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-                      #{Math.round(brand.avgRanking)}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Mentions:</span>
-                      <span className="font-medium">{brand.count}</span>
+              // Fallback to old extraction method with brand logos
+              topBrands.slice(0, 6).map((brand, index) => {
+                // Get brand info from the first mention of this brand
+                const firstMention = competitorResults
+                  .flatMap(result => result.recommendedBrands)
+                  .find(b => b.name.toLowerCase() === brand.name.toLowerCase());
+                const brandInfo = firstMention?.brandInfo;
+                
+                return (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-3">
+                      <BrandLogoWithName 
+                        brandInfo={brandInfo}
+                        brandName={brand.name}
+                        size="sm"
+                      />
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                        #{Math.round(brand.avgRanking)}
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Providers:</span>
-                      <span className="font-medium">{brand.providers.length}</span>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Mentions:</span>
+                        <span className="font-medium">{brand.count}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Providers:</span>
+                        <span className="font-medium">{brand.providers.length}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </CardContent>

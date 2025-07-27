@@ -1,4 +1,5 @@
 // Use Node.js built-in fetch (Node 18+)
+import { recognizeBrand } from "./logo-service";
 
 interface GeminiResponse {
   candidates: Array<{
@@ -98,6 +99,7 @@ interface ProcessedResults {
         ranking: number;
         positives: string[];
         negatives: string[];
+        brandInfo?: import("./logo-service").BrandInfo;
       }>;
     }>;
     reportByBrand: Array<{
@@ -108,6 +110,7 @@ interface ProcessedResults {
         ranking: number;
         positives: string[];
         negatives: string[];
+        brandInfo?: import("./logo-service").BrandInfo;
       }>;
       aiProvidersThink: {
         positiveAspects: string[];
@@ -354,6 +357,23 @@ Return ONLY valid JSON, no additional text.
       }
     }
 
+    // Add brand info to all brands in the results
+    if (parsedResult.aggregatedAnalysis?.reportByProvider) {
+      parsedResult.aggregatedAnalysis.reportByProvider.forEach(provider => {
+        provider.brandRankings.forEach(brand => {
+          brand.brandInfo = recognizeBrand(brand.name);
+        });
+      });
+    }
+
+    if (parsedResult.aggregatedAnalysis?.reportByBrand) {
+      parsedResult.aggregatedAnalysis.reportByBrand.forEach(brandReport => {
+        brandReport.providerInsights.forEach(insight => {
+          insight.brandInfo = recognizeBrand(brandReport.brandName);
+        });
+      });
+    }
+
     return parsedResult;
   } catch (error) {
     console.error('Error processing competitor results with Gemini:', error);
@@ -377,7 +397,8 @@ Return ONLY valid JSON, no additional text.
               name: brand.name,
               ranking: brand.ranking,
               positives: brand.positives || [],
-              negatives: brand.negatives || []
+              negatives: brand.negatives || [],
+              brandInfo: recognizeBrand(brand.name)
             }))
           });
           
@@ -426,7 +447,8 @@ Return ONLY valid JSON, no additional text.
               provider: resp.provider,
               ranking: brandData.ranking,
               positives: brandData.positives || [],
-              negatives: brandData.negatives || []
+              negatives: brandData.negatives || [],
+              brandInfo: recognizeBrand(brand.name)
             };
           });
         
